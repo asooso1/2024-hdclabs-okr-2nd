@@ -101,9 +101,9 @@ const MultiSelect: React.FC<DropdownProps> = ({ id }) => {
       <div>
         <select className="hidden" id={id}>
           <option value="1">Option 2</option>
-          <option value="2">Option 3</option>
-          <option value="3">Option 4</option>
-          <option value="4">Option 5</option>
+          <option value="2">TEST 3</option>
+          <option value="3">ASDF 4</option>
+          <option value="4">ZXcV 5</option>
         </select>
 
         <div className="flex flex-col items-center">

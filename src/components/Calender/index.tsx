@@ -6,7 +6,7 @@ const Calendar = () => {
       <Breadcrumb pageName="Calendar" />
 
       {/* <!-- ====== Calendar Section Start ====== --> */}
-      <div className="w-full max-w-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="w-full max-w-full rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <table className="w-full">
           <thead>
             <tr className="grid grid-cols-7 rounded-t-sm bg-primary text-white">
@@ -51,7 +51,7 @@ const Calendar = () => {
                   <span className="group-hover:text-primary md:hidden">
                     More
                   </span>
-                  <div className="event invisible absolute left-2 z-99 mb-1 flex w-[200%] flex-col rounded-sm border-l-[3px] border-primary bg-gray px-3 py-1 text-left opacity-0 group-hover:visible group-hover:opacity-100 dark:bg-meta-4 md:visible md:w-[190%] md:opacity-100">
+                  <div className="event invisible absolute left-2 z-99 mb-1 flex w-[200%] flex-col rounded-lg border-l-[3px] border-primary bg-gray px-3 py-1 text-left opacity-0 group-hover:visible group-hover:opacity-100 dark:bg-meta-4 md:visible md:w-[190%] md:opacity-100">
                     <span className="event-name text-sm font-semibold text-black dark:text-white">
                       Redesign Website
                     </span>
@@ -196,7 +196,7 @@ const Calendar = () => {
                   <span className="group-hover:text-primary md:hidden">
                     More
                   </span>
-                  <div className="event invisible absolute left-2 z-99 mb-1 flex w-[300%] flex-col rounded-sm border-l-[3px] border-primary bg-gray px-3 py-1 text-left opacity-0 group-hover:visible group-hover:opacity-100 dark:bg-meta-4 md:visible md:w-[290%] md:opacity-100">
+                  <div className="event invisible absolute left-2 z-99 mb-1 flex w-[300%] flex-col rounded-lg border-l-[3px] border-primary bg-gray px-3 py-1 text-left opacity-0 group-hover:visible group-hover:opacity-100 dark:bg-meta-4 md:visible md:w-[290%] md:opacity-100">
                     <span className="event-name text-sm font-semibold text-black dark:text-white">
                       App Design
                     </span>

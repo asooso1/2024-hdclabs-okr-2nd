@@ -11,7 +11,9 @@ const config: Config = {
   darkMode: "class",
   theme: {
     fontFamily: {
-      satoshi: ["Satoshi", "sans-serif"],
+      satoshi: ["satoshi", "sans-serif"],
+      sans: ["Pretendard", "sans-serif"],
+      
     },
     screens: {
       "2xsm": "375px",
@@ -47,6 +49,8 @@ const config: Config = {
           3: "#FAFAFA",
         },
         graydark: "#333A48",
+        graydark1: "#7685a8",
+        graydark2: "#333A48",
         whiten: "#F1F5F9",
         whiter: "#F5F7FD",
         boxdark: "#24303F",

@@ -17,16 +17,17 @@ const DropdownNotification = () => {
           href="#"
           className="relative flex h-8.5 w-8.5 items-center justify-center rounded-full border-[0.5px] border-stroke bg-gray hover:text-primary dark:border-strokedark dark:bg-meta-4 dark:text-white"
         >
-          <span
+          {/* 미확인 표시 */}
+          {/* <span
             className={`absolute -top-0.5 right-0 z-1 h-2 w-2 rounded-full bg-meta-1 ${
               notifying === false ? "hidden" : "inline"
             }`}
           >
-            <span className="absolute -z-1 inline-flex h-full w-full animate-ping rounded-full bg-meta-1 opacity-75"></span>
-          </span>
+            <span className="absolute inline-flex w-full h-full rounded-full opacity-75 -z-1 animate-ping bg-meta-1"></span>
+          </span> */}
 
           <svg
-            className="fill-current duration-300 ease-in-out"
+            className="duration-300 ease-in-out fill-current"
             width="18"
             height="18"
             viewBox="0 0 18 18"
@@ -42,7 +43,7 @@ const DropdownNotification = () => {
 
         {dropdownOpen && (
           <div
-            className={`absolute -right-27 mt-2.5 flex h-90 w-75 flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark sm:right-0 sm:w-80`}
+            className={`absolute -right-27 mt-2.5 flex h-90 w-75 flex-col rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark sm:right-0 sm:w-80`}
           >
             <div className="px-4.5 py-3">
               <h5 className="text-sm font-medium text-bodydark2">
@@ -50,7 +51,7 @@ const DropdownNotification = () => {
               </h5>
             </div>
 
-            <ul className="flex h-auto flex-col overflow-y-auto">
+            <ul className="flex flex-col h-auto overflow-y-auto">
               <li>
                 <Link
                   className="flex flex-col gap-2.5 border-t border-stroke px-4.5 py-3 hover:bg-gray-2 dark:border-strokedark dark:hover:bg-meta-4"
