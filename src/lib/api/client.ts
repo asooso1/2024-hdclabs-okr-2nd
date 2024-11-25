@@ -1,16 +1,16 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+// const API_BASE_URL =
+//   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
 }
 
 class ApiClient {
-  private baseUrl: string;
+  // private baseUrl: string;
 
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl;
-  }
+  // constructor(baseUrl: string = API_BASE_URL) {
+  //   this.baseUrl = baseUrl;
+  // }
 
   private async request<T>(
     endpoint: string,
@@ -23,7 +23,7 @@ class ApiClient {
       ? `?${new URLSearchParams(params).toString()}`
       : "";
 
-    const url = `${this.baseUrl}${endpoint}${queryString}`;
+    const url = `${endpoint}${queryString}`;
 
     try {
       const response = await fetch(url, {

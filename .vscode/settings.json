@@ -5,5 +5,11 @@
     "strings": true
   },
   "css.validate": false,
-  "cSpell.words": ["bodydark", "boxdark", "graydark"]
+  "cSpell.words": [
+    "bodydark",
+    "boxdark",
+    "datepicker",
+    "graydark",
+    "strokedark"
+  ]
 }

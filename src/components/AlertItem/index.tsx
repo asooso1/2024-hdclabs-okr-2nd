@@ -1,4 +1,11 @@
-const AlertItem = ({ title, message, borderColor, bgColor }) => {
+interface AlertItemProps {
+  title: string;
+  message: string;
+  borderColor: string;
+  bgColor: string;
+}
+
+const AlertItem: React.FC<AlertItemProps> = ({ title, message, borderColor, bgColor }) => {
   return (
     <div
       className={`flex w-full border-l-6 ${borderColor} ${bgColor} bg-opacity-[15%] px-7 py-8 shadow-md dark:bg-[#1B1B24] dark:bg-opacity-30 md:p-9`}

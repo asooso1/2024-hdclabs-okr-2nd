@@ -4,9 +4,8 @@ import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import TableOne from "@/components/Tables/TableOne";
 import TableThree from "@/components/Tables/TableThree";
 import TableTwo from "@/components/Tables/TableTwo";
-import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import { apiClient } from "@/lib/api/client";
+import { projectApi } from "@/lib/api/projects";
 
 interface Project {
   createdAt: string;
@@ -30,9 +29,7 @@ const TablesPage = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await apiClient.get<Project[]>(
-          "/api/users/6729ba6389a50140667aefec/managed-projects",
-        );
+        const response = await projectApi.getManagedProjects("6729ba6389a50140667aefec");
         setProjects(response);
       } catch (error) {
         console.error("사용자 데이터 가져오기 실패:", error);
@@ -50,8 +47,8 @@ const TablesPage = () => {
 
       <div className="flex flex-col gap-10">
         <TableTwo projects={projects} loading={loading} />
-        <TableOne />
-        <TableThree />
+        {/* <TableOne />
+        <TableThree /> */}
       </div>
     </DefaultLayout>
   );

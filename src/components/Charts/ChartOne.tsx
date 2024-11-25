@@ -130,16 +130,16 @@ interface ChartOneState {
 
 const ChartOne: React.FC = () => {
   const series = [
-      {
-        name: "Product One",
-        data: [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30, 45],
-      },
+    {
+      name: "전체 작업",
+      data: [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30, 45],
+    },
 
-      {
-        name: "Product Two",
-        data: [30, 25, 36, 30, 45, 35, 64, 52, 59, 36, 39, 51],
-      },
-    ]
+    {
+      name: "완료된 작업",
+      data: [30, 25, 36, 30, 45, 35, 64, 52, 59, 36, 39, 51],
+    },
+  ]
 
   return (
     <div className="col-span-12 rounded-lg border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-8">
@@ -150,8 +150,8 @@ const ChartOne: React.FC = () => {
               <span className="block h-2.5 w-full max-w-2.5 rounded-full bg-primary"></span>
             </span>
             <div className="w-full">
-              <p className="font-semibold text-primary">Total Revenue</p>
-              <p className="text-sm font-medium">12.04.2022 - 12.05.2022</p>
+              <p className="font-semibold text-primary">전체 작업</p>
+              <p className="text-sm font-medium">2024.11.01 - 2024.11.30</p>
             </div>
           </div>
           <div className="flex min-w-47.5">
@@ -159,8 +159,8 @@ const ChartOne: React.FC = () => {
               <span className="block h-2.5 w-full max-w-2.5 rounded-full bg-secondary"></span>
             </span>
             <div className="w-full">
-              <p className="font-semibold text-secondary">Total Sales</p>
-              <p className="text-sm font-medium">12.04.2022 - 12.05.2022</p>
+              <p className="font-semibold text-secondary">완료된 작업</p>
+              <p className="text-sm font-medium">2024.11.01 - 2024.11.30</p>
             </div>
           </div>
         </div>

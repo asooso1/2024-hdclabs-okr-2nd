@@ -15,7 +15,7 @@ const Settings = () => {
       <div className="mx-auto max-w-270">
         <Breadcrumb pageName="프로젝트 관리" />
 
-        <div className="grid grid-cols-5 gap-8">
+        {/* <div className="grid grid-cols-5 gap-8">
           <div className="col-span-5 xl:col-span-3">
             <div className="bg-white border rounded-lg border-stroke shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="py-4 border-b border-stroke px-7 dark:border-strokedark">
@@ -315,7 +315,7 @@ const Settings = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </DefaultLayout>
   );

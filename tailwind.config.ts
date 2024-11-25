@@ -13,7 +13,6 @@ const config: Config = {
     fontFamily: {
       satoshi: ["satoshi", "sans-serif"],
       sans: ["Pretendard", "sans-serif"],
-      
     },
     screens: {
       "2xsm": "375px",

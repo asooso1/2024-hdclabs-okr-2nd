@@ -19,7 +19,7 @@ const Main: React.FC = () => {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="오늘 작업 건수" total="18건" rate="0.43%" levelUp>
+        <CardDataStats title="오늘 작업 건수" total="321건" rate="0.43%" levelUp>
           <svg
             className="fill-primary dark:fill-white"
             width="22"

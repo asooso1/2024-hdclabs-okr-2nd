@@ -4,9 +4,9 @@ import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import TableOne from "@/components/Tables/TableOne";
 import TableThree from "@/components/Tables/TableThree";
 import TableTwo from "@/components/Tables/TableTwo";
-import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import { apiClient } from "@/lib/api/client";
+import { projectApi } from "@/lib/api/projects";
+import Link from "next/link";
 
 interface Project {
   createdAt: string;
@@ -30,9 +30,7 @@ const TablesPage = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await apiClient.get<Project[]>(
-          "/api/users/6729ba6389a50140667aefec/managed-projects",
-        );
+        const response = await projectApi.getManagedProjects("6729ba6389a50140667aefec");
         setProjects(response);
       } catch (error) {
         console.error("사용자 데이터 가져오기 실패:", error);
@@ -47,11 +45,19 @@ const TablesPage = () => {
   return (
     <DefaultLayout>
       <Breadcrumb pageName="프로젝트 목록" />
+      
+      <div className="mb-4">
+        <Link href="/admin/projects/add">
+          <button className="bg-blue-500 text-white px-4 py-2 rounded">
+            프로젝트 추가
+          </button>
+        </Link>
+      </div>
 
       <div className="flex flex-col gap-10">
         <TableTwo projects={projects} loading={loading} />
-        <TableOne />
-        <TableThree />
+        {/* <TableOne />
+        <TableThree /> */}
       </div>
     </DefaultLayout>
   );
