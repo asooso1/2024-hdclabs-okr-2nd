@@ -30,7 +30,7 @@ interface TableTwoProps {
 }
 
 
-const TableTwo = ({ projects, loading }: TableTwoProps) => {
+const WorkerTable = ({ projects, loading }: TableTwoProps) => {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const handleRowClick = (projectId: string) => {
@@ -39,16 +39,11 @@ const TableTwo = ({ projects, loading }: TableTwoProps) => {
 
   const renderLoading = () => (
     <div className="bg-white border rounded-lg border-stroke shadow-default dark:border-strokedark dark:bg-boxdark">
-      <div className="px-4 py-6 md:px-6 xl:px-7.5">
-        <h4 className="text-xl font-semibold text-black dark:text-white">
-          진행중인 프로젝트
-        </h4>
-      </div>
       <div className="grid grid-cols-9 overflow-auto border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-12 md:px-6 2xl:px-7.5 gap-6">
-        <div className="flex items-center col-span-3">
+        <div className="flex items-center col-span-2">
           <p className="font-medium">프로젝트명</p>
         </div>
-        <div className="flex items-center col-span-2">
+        <div className="flex items-center col-span-1">
           <p className="font-medium">작업종류</p>
         </div>
         <div className="flex items-center col-span-1">
@@ -72,10 +67,10 @@ const TableTwo = ({ projects, loading }: TableTwoProps) => {
       </div>
       {Array.from({ length: 5 }).map((_, index) => (
         <div key={index} className="grid grid-cols-9 overflow-auto border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-12 md:px-6 2xl:px-7.5 gap-6">
-          <div className="flex items-center col-span-3 animate-pulse">
+          <div className="flex items-center col-span-2 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-full"></div>
           </div>
-          <div className="flex items-center col-span-2 animate-pulse">
+          <div className="flex items-center col-span-1 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-full"></div>
           </div>
           <div className="flex items-center col-span-1 animate-pulse">
@@ -105,17 +100,11 @@ const TableTwo = ({ projects, loading }: TableTwoProps) => {
 
   return (
     <div className="bg-white border rounded-lg border-stroke shadow-default dark:border-strokedark dark:bg-boxdark">
-      <div className="px-4 py-6 md:px-6 xl:px-7.5">
-        <h4 className="text-xl font-semibold text-black dark:text-white">
-          진행중인 프로젝트
-        </h4>
-      </div>
-
       <div className="grid grid-cols-9 overflow-auto border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-12 md:px-6 2xl:px-7.5 gap-6">
-        <div className="flex items-center col-span-3">
+        <div className="flex items-center col-span-2">
           <p className="font-medium">프로젝트명</p>
         </div>
-        <div className="flex items-center col-span-2">
+        <div className="flex items-center col-span-1">
           <p className="font-medium">작업종류</p>
         </div>
         <div className="flex items-center col-span-1">
@@ -145,11 +134,11 @@ const TableTwo = ({ projects, loading }: TableTwoProps) => {
               onClick={() => {}}
               className="grid grid-cols-9 border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-12 md:px-6 2xl:px-7.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 text-center"
             >
-              <div className="flex items-center col-span-3">
+              <div className="flex items-center col-span-2">
                 <p className="text-sm text-black dark:text-white">{project.name || '-'}</p>
               </div>
-              <div className="flex items-center col-span-2">
-                <p className="text-sm text-black dark:text-white">{project.workType || '-'}</p>
+              <div className="flex items-center col-span-1">
+                <span className="inline-block bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full">{project.workType || '-'}</span>
               </div>
               <div className="flex items-center col-span-1">
                 <p className="text-sm text-black dark:text-white">{project.description || '-'}</p>
@@ -210,4 +199,4 @@ const TableTwo = ({ projects, loading }: TableTwoProps) => {
   );
 };
 
-export default TableTwo;
+export default WorkerTable;

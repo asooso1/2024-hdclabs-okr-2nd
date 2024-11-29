@@ -70,3 +70,9 @@
 .dark .react-datepicker__day--selected:hover {
   background-color: #3c50e0 !important;
 }
+
+.cover-image {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4));
+  background-size: cover;
+  background-position: center;
+}

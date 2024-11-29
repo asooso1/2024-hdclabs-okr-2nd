@@ -7,7 +7,7 @@ import TableTwo from "@/components/Tables/TableTwo";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { projectApi } from "@/lib/api/projects";
 import Link from "next/link";
-
+import { toast } from "react-toastify";
 interface Project {
   createdAt: string;
   updatedAt: string;
@@ -26,14 +26,15 @@ interface Project {
 const TablesPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await projectApi.getManagedProjects("6729ba6389a50140667aefec");
+        const response = await projectApi.getManagedProjects('6744379551dad806db3c9f23');
         setProjects(response);
       } catch (error) {
         console.error("사용자 데이터 가져오기 실패:", error);
+        toast.error("데이터를 가져오지 못했습니다.");
       } finally {
         setLoading(false);
       }
@@ -56,8 +57,8 @@ const TablesPage = () => {
 
       <div className="flex flex-col gap-10">
         <TableTwo projects={projects} loading={loading} />
-        {/* <TableOne />
-        <TableThree /> */}
+        <TableOne />
+        <TableThree />
       </div>
     </DefaultLayout>
   );

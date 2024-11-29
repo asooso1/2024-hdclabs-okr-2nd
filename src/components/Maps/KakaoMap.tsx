@@ -210,8 +210,8 @@ const KakaoMap: React.FC<KakaoMapProps> = ({
           type="text"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && searchPlaces()}
-          placeholder="주소/장소를 입력해주세요"
+          onKeyDown={(e) => e.key === 'Enter' && searchPlaces()}
+          placeholder="장소 입력 후 검색 버튼을 누르세요"
           className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
         />
         <button

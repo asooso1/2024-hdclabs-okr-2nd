@@ -1,3 +1,17 @@
+export interface WorkResult {
+  projects?: Project[];
+  users?: User[];
+}
+
+type ProjectStatus = {
+  userId: string;
+  userName: string;
+  schedule: string;
+  before: string | null;
+  after: string | null;
+  confirmation: string | null;
+  status: string;
+}
 // 프로젝트 관련 타입
 export interface Project {
   createdAt: string;
@@ -11,18 +25,21 @@ export interface Project {
   longitude: number;
   from: string;
   to: string;
-  projectStatuses?: [];
+  projectStatuses?: ProjectStatus[];
+  preferences?: string[];
 }
 
 // 사용자 관련 타입
 export interface User {
-  id: string;
-  role: string;
-  snsId: string | null;
-  name: string;
-  phoneNumber: string;
-  cost: number;
-  projectIds: string[];
+  user: {
+    id: number;
+    name: string;
+    phoneNumber: string;
+    role: 'WORKER' | 'MANAGER';
+    cost: number;
+    projectIds: string[];
+    snsId: string | null;
+  }
 }
 
 // 인증 관련 타입

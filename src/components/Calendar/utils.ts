@@ -57,3 +57,16 @@ export const isLastDayOfEvent = (date: Date, event: Event): boolean => {
 
   return startOfDay.getTime() === eventEnd.getTime();
 };
+
+export const isDateInEvent = (date: Date, event: Event): boolean => {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const eventStart = new Date(event.startTime);
+  eventStart.setHours(0, 0, 0, 0);
+  
+  const eventEnd = new Date(event.endTime);
+  eventEnd.setHours(0, 0, 0, 0);
+
+  return startOfDay >= eventStart && startOfDay <= eventEnd;
+};

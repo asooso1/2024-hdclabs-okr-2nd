@@ -11,7 +11,7 @@ const Breadcrumb = ({ pageName }: BreadcrumbProps) => {
         {pathSegments[pathSegments.length - 1] || pageName}
       </h2>
 
-      <nav>
+      {/* <nav>
         <ol className="flex items-center gap-2">
           <li>
             <Link className="font-medium" href="/">
@@ -35,7 +35,7 @@ const Breadcrumb = ({ pageName }: BreadcrumbProps) => {
             );
           })}
         </ol>
-      </nav>
+      </nav> */}
     </div>
   );
 };

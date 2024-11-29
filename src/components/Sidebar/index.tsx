@@ -7,9 +7,10 @@ import Image from "next/image";
 import SidebarItem from "@/components/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import DropdownNotification from "@/components/Header/DropdownNotification";
-import DropdownUser from "@/components/Header/DropdownUser";
 import DarkModeSwitcher from "@/components/Header/DarkModeSwitcher";
+import { User } from "@/lib/api/types";
+import { userApi } from "@/lib/api/users";
+
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -18,7 +19,7 @@ interface SidebarProps {
 
 const menuGroups = [
   {
-    name: "사용자",
+    name: "작업자",
     menuItems: [
 
       {
@@ -72,7 +73,7 @@ const menuGroups = [
             />
           </svg>
         ),
-        label: "일정표",
+        label: "작업 일정",
         route: "/worker/calendar",
       },
       {
@@ -140,7 +141,7 @@ const menuGroups = [
           </svg>
         ),
         label: "대시보드",
-        route: "/",
+        route: "/admin/dashboard",
       },
 
       {
@@ -174,12 +175,20 @@ const menuGroups = [
           >
             <g clipPath="url(#clip0_130_9756)">
               <path
-                d="M15.7501 0.55835H2.2501C1.29385 0.55835 0.506348 1.34585 0.506348 2.3021V15.8021C0.506348 16.7584 1.29385 17.574 2.27822 17.574H15.7782C16.7345 17.574 17.5501 16.7865 17.5501 15.8021V2.3021C17.522 1.34585 16.7063 0.55835 15.7501 0.55835ZM6.69385 10.599V6.4646H11.3063V10.5709H6.69385V10.599ZM11.3063 11.8646V16.3083H6.69385V11.8646H11.3063ZM1.77197 6.4646H5.45635V10.5709H1.77197V6.4646ZM12.572 6.4646H16.2563V10.5709H12.572V6.4646ZM2.2501 1.82397H15.7501C16.0313 1.82397 16.2563 2.04897 16.2563 2.33022V5.2271H1.77197V2.3021C1.77197 2.02085 1.96885 1.82397 2.2501 1.82397ZM1.77197 15.8021V11.8646H5.45635V16.3083H2.2501C1.96885 16.3083 1.77197 16.0834 1.77197 15.8021ZM15.7501 16.3083H12.572V11.8646H16.2563V15.8021C16.2563 16.0834 16.0313 16.3083 15.7501 16.3083Z"
+                d="M15.7501 0.55835H2.2501C1.29385 0.55835 0.506348 1.34585 0.506348 2.3021V15.8021C0.506348 16.7584 1.29385 17.574 2.27822 17.574H15.7782C16.7345 17.574 17.5501 16.7865 17.5501 15.8021V2.3021C17.522 1.34585 16.7063 0.55835 15.7501 0.55835ZM16.2563 7.53335C16.2563 7.8146 16.0313 8.0396 15.7501 8.0396H2.2501C1.96885 8.0396 1.74385 7.8146 1.74385 7.53335V2.3021C1.74385 2.02085 1.96885 1.79585 2.2501 1.79585H15.7501C16.0313 1.79585 16.2563 2.02085 16.2563 2.3021V7.53335Z"
+                fill=""
+              />
+              <path
+                d="M6.13135 10.9646H2.2501C1.29385 10.9646 0.506348 11.7521 0.506348 12.7083V15.8021C0.506348 16.7583 1.29385 17.5458 2.2501 17.5458H6.13135C7.0876 17.5458 7.8751 16.7583 7.8751 15.8021V12.7083C7.90322 11.7521 7.11572 10.9646 6.13135 10.9646ZM6.6376 15.8021C6.6376 16.0833 6.4126 16.3083 6.13135 16.3083H2.2501C1.96885 16.3083 1.74385 16.0833 1.74385 15.8021V12.7083C1.74385 12.4271 1.96885 12.2021 2.2501 12.2021H6.13135C6.4126 12.2021 6.6376 12.4271 6.6376 12.7083V15.8021Z"
+                fill=""
+              />
+              <path
+                d="M15.75 10.9646H11.8688C10.9125 10.9646 10.125 11.7521 10.125 12.7083V15.8021C10.125 16.7583 10.9125 17.5458 11.8688 17.5458H15.75C16.7063 17.5458 17.4938 16.7583 17.4938 15.8021V12.7083C17.4938 11.7521 16.7063 10.9646 15.75 10.9646ZM16.2562 15.8021C16.2562 16.0833 16.0312 16.3083 15.75 16.3083H11.8688C11.5875 16.3083 11.3625 16.0833 11.3625 15.8021V12.7083C11.3625 12.4271 11.5875 12.2021 11.8688 12.2021H15.75C16.0312 12.2021 16.2562 12.4271 16.2562 12.7083V15.8021Z"
                 fill=""
               />
             </g>
             <defs>
-              <clipPath id="clip0_130_9756">
+              <clipPath id="clip0_130_9807">
                 <rect
                   width="18"
                   height="18"
@@ -193,7 +202,6 @@ const menuGroups = [
         label: "프로젝트 목록",
         route: "/admin/projects",
       }
-
 
       // {
       //   icon: (
@@ -356,6 +364,44 @@ const menuGroups = [
 ];
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [user, setUser] = useState<User['user'] | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await userApi.getUser(localStorage.getItem('userId') || '');
+        setUser(userData.user);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const maskPhoneNumber = (phone: string | undefined) => {
+    if (!phone) return '';
+
+    // 숫자만 추출
+    const numbers = phone.replace(/[^0-9]/g, '');
+
+    // 전화번호 형식이 맞는지 확인
+    if (numbers.length !== 11) return phone;
+
+    // 마스킹 처리
+    return numbers.replace(/(\d{3})(\d{4})(\d{4})/, '$1-****-$3');
+  };
+
+  const getInitial = (name: string | undefined) => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase();
+  };
+
+  const getRoleText = (role: string | undefined) => {
+    if (!role) return '';
+    return role === 'MANAGER' ? '관리자' : '작업자';
+  };
   const pathname = usePathname();
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "Main");
 
@@ -399,40 +445,31 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         </div>
         {/* <!-- SIDEBAR HEADER --> */}
 
-        <div className="flex items-start gap-3 2xsm:gap-7 justify-center p-4 lg:p-6 lg:flex hidden">
-          <span className="h-12 w-12 rounded-full lg:flex hidden">
-            <Image
-              width={112}
-              height={112}
-              src={"/images/user/user-01.png"}
-              style={{
-                width: "auto",
-                height: "auto",
-              }}
-              alt="User"
-            />
+        <div className="flex items-center gap-3 justify-center p-4 lg:p-6 lg:flex hidden">
+          <span className="h-12 w-12 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 flex items-center justify-center text-white">
+            {user && getInitial(user.name)}
           </span>
-          <span className="block text-left lg:flex hidden max-w-xs overflow-hidden flex flex-col justify-center">
+          <span className="block text-left max-w-xs overflow-hidden">
             <span className="block text-sm font-medium text-black dark:text-white">
-              홍길동
+              {user?.name}
             </span>
-            <span className="block text-xs truncate">
-              아이파크 AS
+            <span className="block text-xs">
+              {user && `${getRoleText(user.role)} (${maskPhoneNumber(user.phoneNumber)})`}
             </span>
           </span>
+
         </div>
 
         <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
           {/* <!-- Sidebar Menu --> */}
-          <nav className="px-4 py-4 mt-5 lg:mt-9 lg:px-6">
-            {menuGroups.map((group, groupIndex) => (
-              <div key={groupIndex}>
+          <nav className="px-4 py-4 lg:px-6">
+            {user?.role === 'WORKER' && menuGroups[0] && (
+              <div>
                 <h3 className="mb-4 ml-4 text-sm font-semibold text-graydark dark:text-bodydark2">
-                  {group.name}
+                  {menuGroups[0].name}
                 </h3>
-
                 <ul className="mb-6 flex flex-col gap-1.5">
-                  {group.menuItems.map((menuItem, menuIndex) => (
+                  {menuGroups[0].menuItems.map((menuItem, menuIndex) => (
                     <SidebarItem
                       key={menuIndex}
                       item={menuItem}
@@ -442,7 +479,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   ))}
                 </ul>
               </div>
-            ))}
+            )}
+            {user?.role === 'MANAGER' && menuGroups[1] && ( // 관리자 탭만 렌더링
+              <div>
+                <h3 className="mb-4 ml-4 text-sm font-semibold text-graydark dark:text-bodydark2">
+                  {menuGroups[1].name}
+                </h3>
+                <ul className="mb-6 flex flex-col gap-1.5">
+                  {menuGroups[1].menuItems.map((menuItem, menuIndex) => (
+                    <SidebarItem
+                      key={menuIndex}
+                      item={menuItem}
+                      pageName={pageName}
+                      setPageName={setPageName}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
           </nav>
           {/* <!-- Sidebar Menu --> */}
         </div>

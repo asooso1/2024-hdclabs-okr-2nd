@@ -3,13 +3,13 @@ import { Project, User } from "./types";
 
 export const adminApi = {
   // 관리자의 프로젝트 목록 조회
-  getManagedProjects: (userId: string) => {
-    return apiClient.get<Project[]>(`/api/users/${userId}/managed-projects`);
+  getManagedProjects: (managerId: string) => {
+    return apiClient.get<Project[]>(`/api/users/${managerId}/managed-projects`);
   },
 
   searchUsers: (userId: string) => {
-    // return apiClient.get<User[]>(`/api/users?type=all`);
-    return apiClient.get<User[]>(`/api/users/${userId}/managed-users`);
+    return apiClient.get<User[]>(`/api/users?type=all`);
+    // return apiClient.get<User[]>(`/api/users/${userId}/managed-users`);
   },
 
   // 프로젝트 상세 조회

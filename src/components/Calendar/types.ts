@@ -4,6 +4,10 @@ export interface Event {
   description?: string;
   startTime: Date;
   endTime: Date;
+  latitude?: number;
+  longitude?: number;
+  workType?: string;
+  color?: string;
 }
 
 export interface CalendarProps {
