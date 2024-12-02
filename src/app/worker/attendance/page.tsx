@@ -55,18 +55,17 @@ const AttendancePage = () => {
         );
         setProjects(filteredProjects);
                 
-        if (filteredProjects && filteredProjects.length > 0) {
-          setSelectedProject(filteredProjects[0]);
+        if (filteredProjects.length > 0) {
           const projectId = new URLSearchParams(window.location.search).get('projectId');
-          if (projectId) {
-            const foundProjectIndex = filteredProjects.findIndex(project => project.id === projectId);
-            if (foundProjectIndex !== -1) {
-              setSelectedProject(filteredProjects[foundProjectIndex]);
-            }
-          }
+          const projectToSelect = projectId 
+            ? filteredProjects.find(project => project.id === projectId)
+            : filteredProjects[0];
+            
+          setSelectedProject(projectToSelect || filteredProjects[0]);
         }
       } catch (error) {
         console.error("프로젝트 데이터 가져오기 실패:", error);
+        toast.error("프로젝트 데이터를 가져오는데 실패했습니다.");
       } finally {
         setLoading(false);
       }
@@ -175,14 +174,14 @@ const AttendancePage = () => {
             <h4 className="text-xl font-semibold text-black dark:text-white">
               프로젝트 선택
             </h4>
-            {selectedProject && (
+            {/* {selectedProject && (
               <button
                 onClick={() => setSelectedProject(null)}
                 className="text-sm text-gray-500 hover:text-primary"
               >
                 다른 프로젝트 선택
               </button>
-            )}
+            )} */}
           </div>
           <select
             className="w-full rounded-lg border border-stroke bg-transparent px-5 py-3 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
@@ -240,10 +239,23 @@ const AttendancePage = () => {
                         </p>
                       </div>
                     </div>
+                    <div>
+                      <h3 className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+                        비고
+                      </h3>
+                      <div className="flex items-center text-black dark:text-white">
+                        {/* <svg className="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18v18H3V3zm2 2v14h14V5H5zm2 2h10v10H7V7z" />
+                        </svg> */}
+                        <p className="font-medium">
+                          {selectedProject.description}
+                        </p>
+                      </div>
+                    </div>
 
                     <div>
                       <h3 className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-                        출퇴근 상태
+                        출퇴근
                       </h3>
                       <div className="flex gap-4">
                         <div className="flex-1 p-4 rounded-lg bg-gray-50 dark:bg-meta-4">
@@ -253,7 +265,7 @@ const AttendancePage = () => {
                           </p>
                         </div>
                         <div className="flex-1 p-4 rounded-lg bg-gray-50 dark:bg-meta-4">
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">퇴근 시</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">퇴근 시간</p>
                           <p className="font-medium text-black dark:text-white">
                             {currentStatus.after ? new Date(currentStatus.after).toLocaleTimeString() : '-'}
                           </p>

@@ -1,6 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Chat } from "@/types/chat";
+interface Chat {
+  avatar: string;
+  name: string;
+  text: string;
+  time: number;
+  textCount: number;
+  dot: number;
+}
 
 const chatData: Chat[] = [
   {

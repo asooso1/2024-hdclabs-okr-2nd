@@ -14,7 +14,11 @@ const TablesPage = () => {
     const fetchProjects = async () => {
       try {
         const response = await projectApi.getWorkerProjects(localStorage.getItem('userId') || '');
-        setProjects(response.projects || []);
+        const filteredProjects = (response?.projects || []).filter(project =>
+          project.projectStatuses?.some(status => status.userId === localStorage.getItem('userId'))
+        );
+        setProjects(filteredProjects);
+
       } catch (error) {
         console.error("사용자 데이터 가져오기 실패:", error);
       } finally {

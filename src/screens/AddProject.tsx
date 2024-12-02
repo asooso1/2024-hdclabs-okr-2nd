@@ -32,7 +32,7 @@ const searchUsers = async (inputValue: string) => {
         throw new Error('사용자 검색에 실패했습니다');
       }
       cachedUsers = response.map((user: User) => ({
-        value: user.id,
+        value: user.id.toString(),
         label: user.name
       }));
     } catch (error) {
@@ -166,7 +166,7 @@ const AddProject = () => {
 
       if (cachedUsers) {
         const newUserOption = {
-          value: response.id,
+          value: response.id.toString(),
           label: response.name
         };
         cachedUsers = [...cachedUsers, newUserOption];
@@ -191,7 +191,7 @@ const AddProject = () => {
         isAddOption: true,
         isFixed: true
       },
-      ...users
+      ...(users || [])
     ];
   };
 

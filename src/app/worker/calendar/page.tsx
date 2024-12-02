@@ -3,9 +3,9 @@ import WorkerCalendar from "@/screens/WorkerCalendar";
 
 const WorkerCalendarPage = () => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    // <Suspense fallback={<div>Loading...</div>}>
       <WorkerCalendar />
-    </Suspense>
+    // </Suspense>
   );
 };
 

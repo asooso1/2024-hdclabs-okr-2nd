@@ -8,7 +8,7 @@ import SidebarItem from "@/components/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import DarkModeSwitcher from "@/components/Header/DarkModeSwitcher";
-import { User } from "@/lib/api/types";
+import { OptionUser } from "@/lib/api/types";
 import { userApi } from "@/lib/api/users";
 
 
@@ -365,7 +365,7 @@ const menuGroups = [
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [user, setUser] = useState<User['user'] | null>(null);
+  const [user, setUser] = useState<OptionUser['user'] | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {

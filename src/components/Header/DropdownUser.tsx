@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
-import { User } from "@/lib/api/types";
+import { OptionUser } from "@/lib/api/types";
 import { userApi } from "@/lib/api/users";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [user, setUser] = useState<User['user'] | null>(null);
+  const [user, setUser] = useState<OptionUser['user'] | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {

@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import Loader from "@/components/common/Loader";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
 const StaticMap = dynamic(() => import('@/components/Maps/StaticMap'), {
   ssr: false
@@ -19,7 +20,7 @@ const StaticMap = dynamic(() => import('@/components/Maps/StaticMap'), {
 export default function CalendarPage() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get('projectId');
-
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<Event[]>([]);
@@ -90,6 +91,7 @@ export default function CalendarPage() {
           schedules: [date.toISOString().split('T')[0]]
         });
         toast.success("작업 일정이 선택되었습니다.");
+        router.push(`/worker/attendance?projectId=${projectId}`);
       } catch (error) {
         console.error("작업 일정 선택 실패:", error);
         toast.error("작업 일정 선택에 실패했습니다.");
@@ -109,7 +111,7 @@ export default function CalendarPage() {
 
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="작업계획 선택" />
+      <Breadcrumb pageName="작업 일정" />
       <div className="mx-auto max-w-5xl">
         {project && (
           <div className="mb-8">
@@ -175,23 +177,26 @@ export default function CalendarPage() {
         )}
 
         <div className="bg-white dark:bg-boxdark rounded-xl shadow-default">
-          <div className="p-6 border-b border-stroke dark:border-strokedark">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-black dark:text-white">
-                {searchParams.get('type') === 'accept' ? '작업일 선택' : '근로계획 확인'}
-              </h2>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-[#34D399] mr-2"></div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">추천 작업일</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
+          {searchParams.get('type') === 'accept' ?
+            (
+              <div className="p-6 border-b border-stroke dark:border-strokedark">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-black dark:text-white">
+                    {searchParams.get('type') === 'accept' ? '작업일 선택' : '근로계획 확인'}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-[#34D399] mr-2"></div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">추천 작업일</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            ) : null}
           <div className="p-6">
             <Calendar
               events={[...events, ...preferenceEvents]}

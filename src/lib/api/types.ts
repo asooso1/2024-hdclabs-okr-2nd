@@ -11,7 +11,7 @@ type ProjectStatus = {
   after: string | null;
   confirmation: string | null;
   status: string;
-}
+};
 // 프로젝트 관련 타입
 export interface Project {
   createdAt: string;
@@ -31,15 +31,25 @@ export interface Project {
 
 // 사용자 관련 타입
 export interface User {
+  id: number;
+  name: string;
+  phoneNumber: string;
+  role: "WORKER" | "MANAGER";
+  cost: number;
+  projectIds: string[];
+  snsId: string | null;
+}
+
+export interface OptionUser {
   user: {
     id: number;
     name: string;
     phoneNumber: string;
-    role: 'WORKER' | 'MANAGER';
+    role: "WORKER" | "MANAGER";
     cost: number;
     projectIds: string[];
     snsId: string | null;
-  }
+  };
 }
 
 // 인증 관련 타입

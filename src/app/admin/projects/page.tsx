@@ -8,20 +8,8 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { projectApi } from "@/lib/api/projects";
 import Link from "next/link";
 import { toast } from "react-toastify";
-interface Project {
-  createdAt: string;
-  updatedAt: string;
-  id: string;
-  name: string;
-  description: string;
-  workType: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  from: string;
-  to: string;
-  projectStatuses?: [];
-}
+import { Project } from "@/lib/api/types";
+
 
 const TablesPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -31,7 +19,7 @@ const TablesPage = () => {
     const fetchProjects = async () => {
       try {
         const response = await projectApi.getManagedProjects('6744379551dad806db3c9f23');
-        setProjects(response);
+        setProjects(response || []);
       } catch (error) {
         console.error("사용자 데이터 가져오기 실패:", error);
         toast.error("데이터를 가져오지 못했습니다.");

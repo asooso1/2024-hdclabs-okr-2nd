@@ -1,7 +1,7 @@
-import AddProject from './AddProject copy_mergeEdit';
+import AddProject from './AddProject';
 
 const EditProject = () => {
-  return <AddProject edit={true} />;
+  return <AddProject />;
 };
 
 export default EditProject; 
