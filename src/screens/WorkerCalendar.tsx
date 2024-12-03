@@ -27,6 +27,7 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [preferenceEvents, setPreferenceEvents] = useState<Event[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     const fetchProjectDetails = async () => {
@@ -57,8 +58,23 @@ export default function CalendarPage() {
           color: '#34D399' // 추천 작업일 색상 (초록색)
         })) || [];
 
+        // 사용자의 근무일 이벤트로 변환
+        const userId = localStorage.getItem('userId');
+        const userSchedules = projectData.projectStatuses?.filter(
+          status => status.userId === userId
+        ) || [];
+        
+        const scheduleEvents: Event[] = userSchedules.map(status => ({
+          id: `schedule-${status.schedule}`,
+          title: "나의 근무일",
+          startTime: new Date(status.schedule),
+          endTime: new Date(status.schedule),
+          color: '#F59E0B' // 근무일 색상 (주황색)
+        }));
+
         setEvents([projectEvent]);
         setPreferenceEvents(preferenceEvents);
+        setScheduleEvents(scheduleEvents);
       } catch (error) {
         console.error("프로젝트 상세 정보 가져오기 실패:", error);
         toast.error("프로젝트 정보를 가져오지 못했습니다.");
@@ -88,7 +104,7 @@ export default function CalendarPage() {
       try {
         await projectApi.acceptProject(projectId!, {
           userId: localStorage.getItem('userId') || '' || '',
-          schedules: [date.toISOString().split('T')[0]]
+          schedules: [new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]]
         });
         toast.success("작업 일정이 선택되었습니다.");
         router.push(`/worker/attendance?projectId=${projectId}`);
@@ -177,29 +193,32 @@ export default function CalendarPage() {
         )}
 
         <div className="bg-white dark:bg-boxdark rounded-xl shadow-default">
-          {searchParams.get('type') === 'accept' ?
-            (
-              <div className="p-6 border-b border-stroke dark:border-strokedark">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-black dark:text-white">
-                    {searchParams.get('type') === 'accept' ? '작업일 선택' : '근로계획 확인'}
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-[#34D399] mr-2"></div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">추천 작업일</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-primary/20 mr-2"></div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
-                    </div>
+          {searchParams.get('type') === 'accept' ? (
+            <div className="p-6 border-b border-stroke dark:border-strokedark">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-black dark:text-white">
+                  {searchParams.get('type') === 'accept' ? '작업일 선택' : '근로계획 확인'}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    <div className="w-4 h-3 rounded-full bg-[#34D399] mr-2"></div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">추천 작업일</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-3 rounded-full bg-primary/20 mr-2"></div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-3 rounded-full bg-[#F59E0B] mr-2"></div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">나의 근무일</span>
                   </div>
                 </div>
               </div>
-            ) : null}
+            </div>
+          ) : null}
           <div className="p-6">
             <Calendar
-              events={[...events, ...preferenceEvents]}
+              events={[...events, ...preferenceEvents, ...scheduleEvents]}
               onDateClick={handleDateClick}
             />
           </div>

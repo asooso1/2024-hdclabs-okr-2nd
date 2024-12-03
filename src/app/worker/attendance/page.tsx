@@ -3,10 +3,12 @@ import { useEffect, useState, useRef } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { projectApi } from "@/lib/api/projects";
+import { userApi } from "@/lib/api/workers";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Loader from "@/components/common/Loader";
 import StaticMap from "@/components/Maps/StaticMap";
+import { ProjectResult } from "@/lib/api/types";
 
 interface Project {
   createdAt: string;
@@ -108,22 +110,24 @@ const AttendancePage = () => {
       });
 
       const formData = new FormData();
-      formData.append('image', file);
-      formData.append('latitude', location.coords.latitude.toString());
-      formData.append('longitude', location.coords.longitude.toString());
-      formData.append('timestamp', new Date().toISOString());
+      formData.append('images', file);
 
+      const data = {
+        type: type === 'checkIn' ? 'BEFORE' : 'AFTER',
+        userId: localStorage.getItem('userId') || '',
+        schedule: new Date().toISOString().split('T')[0],
+        description: type === 'checkIn' ? '출근 등록' : '퇴근 등록',
+        latitude: location.coords.latitude.toString(),
+        longitude: location.coords.longitude.toString()
+      };
+
+      formData.append('data', JSON.stringify(data));
+
+      // API 호출 로직 추가 예정
       if (type === 'checkIn') {
+        const response = await userApi.projectResult(selectedProject?.id || '', data as ProjectResult, [file]);
+        console.log(response)
         setCurrentStatus(prev => ({ ...prev, before: new Date().toISOString() }));
-        console.log("입력받은 데이터:", {
-          file,
-          type,
-          location: {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude
-          },
-          timestamp: new Date().toISOString()
-        });
         toast.success('정상적으로 출근 처리되었습니다.');
       } else {
         setCurrentStatus(prev => ({ ...prev, after: new Date().toISOString() }));
@@ -132,8 +136,7 @@ const AttendancePage = () => {
     } catch (error) {
       console.error('출퇴근 처리 중 오류 발생:', error);
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-      alert(`위치 정보 오류: ${errorMessage}`);
-      toast.error('처리 중 오류가 발생했습니다.');
+      toast.error(`위치 정보 오류: ${errorMessage}`);
     }
   };
 
@@ -150,14 +153,30 @@ const AttendancePage = () => {
   };
 
   const handleConfirmation = async () => {
-    toast.success('작업확인서가 정상적으로 등록되었습니다.', {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
+    try {
+      const location = await getCurrentLocation();
+      
+      const formData = new FormData();
+      // 작업확인서에 필요한 이미지가 있다면 추가
+      // formData.append('images', imageFile);
+
+      const data = {
+        type: 'CONFIRM',
+        userId: localStorage.getItem('userId') || '',
+        schedule: new Date().toISOString().split('T')[0],
+        description: '작업확인서 등록',
+        latitude: location.coords.latitude.toString(),
+        longitude: location.coords.longitude.toString()
+      };
+
+      formData.append('data', JSON.stringify(data));
+
+      // API 호출 로직 추가 예정
+      toast.success('작업확인서가 정상적으로 등록되었습니다.');
+    } catch (error) {
+      console.error('작업확인서 등록 중 오류 발생:', error);
+      toast.error('작업확인서 등록 중 오류가 발생했습니다.');
+    }
   };
 
   if (loading) {
@@ -169,22 +188,14 @@ const AttendancePage = () => {
       <ToastContainer />
       <Breadcrumb pageName="출퇴근 관리" />
       <div className="mx-auto max-w-5xl">
-        <div className="mb-6 bg-white dark:bg-boxdark rounded-xl shadow-default p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 bg-white dark:bg-boxdark rounded-xl shadow-default p-6 relative">
+          <div className="flex items-center justify-between mb-4 relative">
             <h4 className="text-xl font-semibold text-black dark:text-white">
               프로젝트 선택
             </h4>
-            {/* {selectedProject && (
-              <button
-                onClick={() => setSelectedProject(null)}
-                className="text-sm text-gray-500 hover:text-primary"
-              >
-                다른 프로젝트 선택
-              </button>
-            )} */}
           </div>
           <select
-            className="w-full rounded-lg border border-stroke bg-transparent px-5 py-3 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4"
+            className="w-full rounded-lg border border-stroke bg-transparent px-5 py-3 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 appearance-none"
             value={selectedProject?.id || ""}
             onChange={(e) => {
               const project = projects.find((p) => p.id === e.target.value);
@@ -198,6 +209,11 @@ const AttendancePage = () => {
               </option>
             ))}
           </select>
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" style={{ top: '50%' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 10l5 5 5-5H7z" />
+            </svg>
+          </div>
         </div>
 
         {selectedProject && (

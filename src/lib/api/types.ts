@@ -62,3 +62,12 @@ export interface SignInResponse {
   token: string;
   user: User;
 }
+
+export interface ProjectResult {
+  type: 'BEFORE' | 'AFTER' | 'CONFIRM';
+  userId: string;
+  schedule: string;
+  description: string;
+  latitude: string;
+  longitude: string;
+}

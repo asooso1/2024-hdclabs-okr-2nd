@@ -1,13 +1,11 @@
-import Dashboard from "@/components/Dashboard/index";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import LandingPage from "@/screens/LandingPage";
 
 
 export default function Home() {
   return (
     <>
-      <DefaultLayout>
-        <Dashboard />
-      </DefaultLayout>
+      <LandingPage />
     </>
   );
 }

@@ -3,7 +3,6 @@ import { Metadata } from "next";
 import React, { useState, ReactNode } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
-import AuthCheck from "@/components/auth/AuthCheck";
 
 export const metadata: Metadata = {
   title: {
@@ -18,7 +17,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function DefaultLayout({
+export default function LandingLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -40,8 +39,7 @@ export default function DefaultLayout({
 
           {/* <!-- ===== Main Content Start ===== --> */}
           <main>
-            <div className="p-4 md:p-6 2xl:p-10 lg:ml-52 lg:w-[calc(100vw-14rem)]">
-              <AuthCheck />
+            <div className="p-4 md:p-6 lg:ml-52 lg:w-[calc(100vw-14rem)] 2xl:p-10">
               {children}
             </div>
           </main>

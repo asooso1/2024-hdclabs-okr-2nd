@@ -346,5 +346,7 @@ const config: Config = {
     },
   },
   plugins: [],
+  mode: "jit",
+  purge: ["./public/**/*.html", "./src/**/*.{js,jsx,ts,tsx,vue}"],
 };
 export default config;

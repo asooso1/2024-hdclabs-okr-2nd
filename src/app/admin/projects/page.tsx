@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import TableOne from "@/components/Tables/TableOne";
-import TableThree from "@/components/Tables/TableThree";
-import TableTwo from "@/components/Tables/TableTwo";
+import AdminProject from "@/screens/AdminProject";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { projectApi } from "@/lib/api/projects";
 import Link from "next/link";
@@ -44,9 +42,9 @@ const TablesPage = () => {
       </div>
 
       <div className="flex flex-col gap-10">
-        <TableTwo projects={projects} loading={loading} />
-        <TableOne />
-        <TableThree />
+        <AdminProject projects={projects} loading={loading} />
+        {/* <TableOne />
+        <TableThree /> */}
       </div>
     </DefaultLayout>
   );

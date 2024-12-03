@@ -32,7 +32,7 @@ const Day: React.FC<DayProps> = ({ date, events, isCurrentMonth, onClick }) => {
           {date.getDate()}
         </span>
         <div className="absolute left-0 right-0 top-8 flex flex-col gap-0.5  h-full">
-          {sortedEvents.map((event, index) => {
+          {sortedEvents.slice(0, 3).map((event, index) => {
             const isFirst = isFirstDayOfEvent(date, event);
             const isLast = isLastDayOfEvent(date, event);
             

@@ -104,13 +104,13 @@ const WorkerTable = ({ projects, loading }: TableTwoProps) => {
         <div className="flex items-center col-span-2">
           <p className="font-medium">작업 기간</p>
         </div>
-        <div className="flex items-center col-span-1 hidden md:block">
+        <div className="flex items-center col-span-2 hidden md:block">
           <p className="font-medium">비고</p>
         </div>
-        <div className="flex items-center col-span-1 hidden md:block">
+        <div className="flex items-center col-span-2 hidden md:block">
           <p className="font-medium">작업 위치</p>
         </div>
-        <div className="flex items-center col-span-1 hidden md:block">
+        <div className="flex items-center col-span-2 hidden md:block">
           <p className="font-medium">작업 참여자</p>
         </div>
       </div>
@@ -120,7 +120,7 @@ const WorkerTable = ({ projects, loading }: TableTwoProps) => {
           <Link href={`/worker/calendar?projectId=${project.id}&userId=${localStorage.getItem('userId')}&type=accept`}>
             <div
               onClick={() => {}}
-              className="grid grid-cols-6 border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-12 md:px-6 2xl:px-7.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 text-center gap-1"
+              className="grid grid-cols-6 border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-12 md:px-6 2xl:px-7.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 gap-1"
             >
               <div className="flex items-center col-span-3">
                 <p className="text-sm text-black dark:text-white">{project.name || '-'}</p>
@@ -129,58 +129,19 @@ const WorkerTable = ({ projects, loading }: TableTwoProps) => {
                 <span className="inline-block bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full">{project.workType || '-'}</span>
               </div>
               <div className="flex items-center col-span-2">
-                <p className="text-sm text-black dark:text-white">{new Date(project.from).toLocaleDateString()} <br />~ {new Date(project.to).toLocaleDateString()}</p>
+                <p className="text-sm text-black dark:text-white">{new Date(project.from).toLocaleDateString()} <br className="block md:hidden" />~ {new Date(project.to).toLocaleDateString()}</p>
               </div>
-              <div className="flex items-center col-span-1 hidden md:block">
+              <div className="flex items-center col-span-2 hidden md:block">
                 <p className="text-sm text-black dark:text-white">{project.description || '-'}</p>
               </div>
-              <div className="flex items-center col-span-1 hidden md:block">
+              <div className="flex items-center col-span-2 hidden md:block">
                 <p className="text-sm text-black dark:text-white">{project.address || '-'}</p>
               </div>
-              <div className="flex items-center col-span-1 hidden md:block">
-                <p className="text-sm text-black dark:text-white">{project.workType || '-'}</p>
+              <div className="flex items-center col-span-2 hidden md:block">
+                <p className="text-sm text-black dark:text-white">{project.projectStatuses?.length === 1 ? `${project.projectStatuses[0].userName}` : project.projectStatuses?.map((status) => status.userName).join(', ') || '-'}</p>
               </div>
             </div>
           </Link>
-
-          {/* {expandedRow === project.id && (
-            <div className="border-t border-stroke dark:border-strokedark bg-gray-50 dark:bg-gray-800">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="py-2 text-center">작업자</th>
-                        <th className="py-2 text-center">작업 일정</th>
-                        <th className="py-2 text-center">출근</th>
-                        <th className="py-2 text-center">퇴근</th>
-                        <th className="py-2 text-center">작업확인서</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {project.projectStatuses && project.projectStatuses.length > 0 ? (
-                        project.projectStatuses.map((status, index) => (
-                          <tr key={index} className="border-t border-stroke dark:border-strokedark">
-                            <td className="py-2 text-center">{status.userName || '-'}</td>
-                            <td className="py-2 text-center">{status.schedule}</td>
-                            <td className="py-2 text-center">{status.before !== null ? 'v' : '-'}</td>
-                            <td className="py-2 text-center">{status.after !== null ? 'v' : '-'}</td>
-                            <td className="py-2 text-center">{status.confirmation !== null ? 'v' : '-'}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td className="border-t border-stroke dark:border-strokedark text-gray-500 py-2 text-center">
-                            등록된 작업자 정보가 없습니다.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )} */}
         </div>
       ))}
     </div>
