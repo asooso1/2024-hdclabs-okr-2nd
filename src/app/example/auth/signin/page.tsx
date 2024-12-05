@@ -22,7 +22,7 @@ const SignIn: React.FC = () => {
       });
 
       // 로그인 성공 처리
-      console.log("로그인 성공:", response);
+      // console.log("로그인 성공:", response);
     } catch (error) {
       // 에러 처리
       console.error("로그인 실패:", error);

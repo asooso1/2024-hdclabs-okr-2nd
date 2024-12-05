@@ -30,63 +30,113 @@ export default function CalendarPage() {
   const [scheduleEvents, setScheduleEvents] = useState<Event[]>([]);
 
   useEffect(() => {
-    const fetchProjectDetails = async () => {
-      if (!projectId) {
+    const fetchCalendarData = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
         setLoading(false);
         return;
       }
 
       try {
-        const projectData = await projectApi.getProjectForWorker(projectId);
-        setProject(projectData);
+        if (searchParams.get('type') === 'accept') {
+          if (!projectId) {
+            setLoading(false);
+            return;
+          }
+          const projectData = await projectApi.getProjectForWorker(projectId);
+          handleProjectData(projectData);
+        } else {
+          const workerProjects = await projectApi.getWorkerProjects(userId);
+          
+          const allEvents: Event[] = [];
+          const allScheduleEvents: Event[] = [];
 
-        // 프로젝트 기간을 이벤트로 변환
-        const projectEvent: Event = {
-          id: projectData.id,
-          title: projectData.name,
-          startTime: new Date(projectData.from),
-          endTime: new Date(projectData.to),
-          color: '#3C50E0' // 프로젝트 기간 색상
-        };
+          (workerProjects?.projects || []).forEach(project => {
+            // 해당 사용자의 프로젝트 상태가 있는 경우에만 프로젝트 기간 표시
+            const hasUserStatus = project.projectStatuses?.some(
+              status => status.userId === userId
+            );
 
-        // 선호 날짜들을 이벤트로 변환
-        const preferenceEvents: Event[] = projectData.preferences?.map((date: string) => ({
-          id: `pref-${date}`,
-          title: "추천 작업일",
-          startTime: new Date(date),
-          endTime: new Date(date),
-          color: '#34D399' // 추천 작업일 색상 (초록색)
-        })) || [];
+            if (hasUserStatus) {
+              allEvents.push({
+                id: project.id,
+                title: project.name,
+                startTime: new Date(project.from),
+                endTime: new Date(project.to),
+                color: '#3C50E0'
+              });
+            }
 
-        // 사용자의 근무일 이벤트로 변환
-        const userId = localStorage.getItem('userId');
-        const userSchedules = projectData.projectStatuses?.filter(
-          status => status.userId === userId
-        ) || [];
-        
-        const scheduleEvents: Event[] = userSchedules.map(status => ({
-          id: `schedule-${status.schedule}`,
-          title: "나의 근무일",
-          startTime: new Date(status.schedule || ''),
-          endTime: new Date(status.schedule || ''),
-          color: '#F59E0B' // 근무일 색상 (주황색)
-        }));
+            // 근무일 이벤트 처리 (기존 코드 유지)
+            const userSchedules = project.projectStatuses?.filter(
+              status => status.userId === userId
+            ) || [];
 
-        setEvents([projectEvent]);
-        setPreferenceEvents(preferenceEvents);
-        setScheduleEvents(scheduleEvents);
+            const projectScheduleEvents = userSchedules.map(status => ({
+              id: `schedule-${status.schedule}-${project.id}`,
+              title: `${project.name} 근무일`,
+              startTime: new Date(status.schedule || ''),
+              endTime: new Date(status.schedule || ''),
+              color: '#F59E0B'
+            }));
+
+            allScheduleEvents.push(...projectScheduleEvents);
+          });
+
+          setEvents(allEvents);
+          setScheduleEvents(allScheduleEvents);
+        }
       } catch (error) {
-        console.error("프로젝트 상세 정보 가져오기 실패:", error);
-        toast.error("프로젝트 정보를 가져오지 못했습니다.");
+        console.error("데이터 가져오기 실패:", error);
+        toast.error("일정 정보를 가져오지 못했습니다.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjectDetails();
-  }, [projectId]);
+    const handleProjectData = (projectData: Project) => {
+      setProject(projectData);
+
+      const projectEvent: Event = {
+        id: projectData.id,
+        title: projectData.name,
+        startTime: new Date(projectData.from),
+        endTime: new Date(projectData.to),
+        color: '#3C50E0'
+      };
+
+      const preferenceEvents: Event[] = projectData.preferences?.map((date: string) => ({
+        id: `pref-${date}`,
+        title: "추천 작업일",
+        startTime: new Date(date),
+        endTime: new Date(date),
+        color: '#34D399'
+      })) || [];
+
+      const userId = localStorage.getItem('userId');
+      const userSchedules = projectData.projectStatuses?.filter(
+        status => status.userId === userId
+      ) || [];
+      
+      const scheduleEvents: Event[] = userSchedules.map(status => ({
+        id: `schedule-${status.schedule}`,
+        title: "나의 근무일",
+        startTime: new Date(status.schedule || ''),
+        endTime: new Date(status.schedule || ''),
+        color: '#F59E0B'
+      }));
+
+      setEvents([projectEvent]);
+      setPreferenceEvents(preferenceEvents);
+      setScheduleEvents(scheduleEvents);
+    };
+
+    fetchCalendarData();
+  }, [projectId, searchParams]);
 
   const handleDateClick = async (date: Date) => {
+    if (searchParams.get('type') !== 'accept') return;
+
     // 선호 날짜인지 확인
     const isPreferredDate = preferenceEvents.some(event => {
       const eventDate = new Date(event.startTime);
@@ -127,9 +177,8 @@ export default function CalendarPage() {
 
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="작업 일정" />
       <div className="mx-auto max-w-5xl">
-        {project && (
+        {searchParams.get('type') === 'accept' && project && (
           <div className="mb-8">
             <div className="bg-white dark:bg-boxdark rounded-xl shadow-default overflow-hidden mb-6">
               <div className="relative h-40 bg-gradient-to-r from-primary/90 to-primary">
@@ -193,29 +242,29 @@ export default function CalendarPage() {
         )}
 
         <div className="bg-white dark:bg-boxdark rounded-xl shadow-default">
-          {searchParams.get('type') === 'accept' ? (
-            <div className="p-6 border-b border-stroke dark:border-strokedark">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-black dark:text-white">
-                  {searchParams.get('type') === 'accept' ? '작업일 선택' : '근로계획 확인'}
-                </h2>
-                <div className="flex items-center gap-2">
+          <div className="p-6 border-b border-stroke dark:border-strokedark">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-black dark:text-white">
+                {searchParams.get('type') === 'accept' ? '작업일 선택' : '내 작업 일정'}
+              </h2>
+              <div className="flex items-center gap-2">
+                {searchParams.get('type') === 'accept' && (
                   <div className="flex items-center">
                     <div className="w-4 h-3 rounded-full bg-[#34D399] mr-2"></div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">추천 작업일</span>
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-3 rounded-full bg-primary/20 mr-2"></div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-3 rounded-full bg-[#F59E0B] mr-2"></div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">나의 근무일</span>
-                  </div>
+                )}
+                <div className="flex items-center">
+                  <div className="w-4 h-3 rounded-full bg-primary/20 mr-2"></div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-3 rounded-full bg-[#F59E0B] mr-2"></div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">나의 근무일</span>
                 </div>
               </div>
             </div>
-          ) : null}
+          </div>
           <div className="p-6">
             <Calendar
               events={[...events, ...preferenceEvents, ...scheduleEvents]}

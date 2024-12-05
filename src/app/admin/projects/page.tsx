@@ -31,7 +31,7 @@ const TablesPage = () => {
 
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="프로젝트 목록" />
+      {/* <Breadcrumb pageName="프로젝트 목록" /> */}
       
 
       <div className="flex flex-col gap-10">

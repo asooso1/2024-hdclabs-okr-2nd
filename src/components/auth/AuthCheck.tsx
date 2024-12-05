@@ -8,7 +8,7 @@ export default function AuthCheck() {
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
-    console.log('Checking userId:', userId);
+    // console.log('Checking userId:', userId);
     
     if (!userId) {
       console.log('No userId found, redirecting to login');

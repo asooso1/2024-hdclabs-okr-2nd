@@ -1,36 +1,37 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from 'next/link';
+import { Project } from "@/lib/api/types";
 
-interface Project {
-  createdAt: string;
-  updatedAt: string;
-  id: string;
-  name: string;
-  description: string;
-  workType: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  from: string;
-  to: string;
-  projectStatuses?: {
-    userId: string;
-    userName: string | null;
-    schedule: string;
-    before: string | null;
-    after: string | null;
-    confirmation: string | null;
-  }[];
-}
+// interface Project {
+//   createdAt: string;
+//   updatedAt: string;
+//   id: string;
+//   name: string;
+//   description: string;
+//   workType: string;
+//   address: string;
+//   latitude: number;
+//   longitude: number;
+//   from: string;
+//   to: string;
+//   projectStatuses?: {
+//     userId: string;
+//     userName: string | null;
+//     schedule: string;
+//     before: string | null;
+//     after: string | null;
+//     confirmation: string | null;
+//   }[];
+// }
 
-interface TableTwoProps {
+interface WorkerTableProps {
   projects: Project[];
   loading: boolean;
 }
 
 
-const WorkerTable = ({ projects, loading }: TableTwoProps) => {
+const WorkerTable = ({ projects, loading }: WorkerTableProps) => {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const handleRowClick = (projectId: string) => {
@@ -136,9 +137,9 @@ const WorkerTable = ({ projects, loading }: TableTwoProps) => {
                   {project.projectStatuses?.find(
                     status => status.userId === localStorage.getItem('userId')
                   )?.schedule 
-                    ? new Date(project.projectStatuses.find(
+                    ? new Date(project.projectStatuses?.find(
                         status => status.userId === localStorage.getItem('userId')
-                      )!.schedule).toLocaleDateString()
+                      )?.schedule || '').toLocaleDateString()
                     : '-'}
                 </p>
               </div>

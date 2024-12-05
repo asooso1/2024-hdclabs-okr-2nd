@@ -6,7 +6,7 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { projectApi } from "@/lib/api/projects";
 import { Project } from "@/lib/api/types";
 
-const TablesPage = () => {
+const WorkerProject = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,15 +31,13 @@ const TablesPage = () => {
 
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="프로젝트 목록" />
+      {/* <Breadcrumb pageName="프로젝트 목록" /> */}
 
       <div className="flex flex-col gap-10">
         <WorkerTable projects={projects as Project[]} loading={loading} />
-        {/* <TableOne />
-        <TableThree /> */}
       </div>
     </DefaultLayout>
   );
 };
 
-export default TablesPage;
+export default WorkerProject;
