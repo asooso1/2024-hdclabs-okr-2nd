@@ -12,7 +12,7 @@ interface TableTwoProps {
 }
 
 const AdminProject = ({ projects, loading }: TableTwoProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>();
   const [searchFilters, setSearchFilters] = useState({
     name: '',
     workType: '',
@@ -36,6 +36,17 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
     setSelectedDate(date);
   };
 
+  const handleResetFilters = () => {
+    setSelectedDate(null);
+    setSearchFilters({
+      name: '',
+      workType: '',
+      address: '',
+      description: '',
+      userName: ''
+    });
+  };
+
   const filteredProjects = projects.filter(project => {
     // 날짜 필터링
     if (selectedDate) {
@@ -54,9 +65,12 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
     const matchWorkType = project.workType?.toLowerCase().includes(searchFilters.workType.toLowerCase()) ?? true;
     const matchAddress = project.address?.toLowerCase().includes(searchFilters.address.toLowerCase()) ?? true;
     const matchDescription = project.description?.toLowerCase().includes(searchFilters.description.toLowerCase()) ?? true;
-    const matchUserName = project.projectStatuses?.some(status => 
-      status.userName?.toLowerCase().includes(searchFilters.userName.toLowerCase())
-    ) ?? true;
+    
+    // 참여자 필터링 로직 수정
+    const matchUserName = searchFilters.userName === '' || 
+      (project.projectStatuses?.some(status => 
+        status.userName?.toLowerCase().includes(searchFilters.userName.toLowerCase())
+      ) ?? false);
 
     return matchName && matchWorkType && matchAddress && matchDescription && matchUserName;
   });
@@ -137,11 +151,19 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
           <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
             프로젝트 목록
           </h4>
-          <Link href="/admin/projects/add">
-            <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-blue-600">
-              프로젝트 추가
+          <div className="flex gap-3">
+            <button
+              onClick={handleResetFilters}
+              className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            >
+              필터 초기화
             </button>
-          </Link>
+            <Link href="/admin/projects/add">
+              <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-blue-600">
+                프로젝트 추가
+              </button>
+            </Link>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -267,7 +289,7 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
                     {project.description || '-'}
                   </div>
                   <div className="hidden md:block md:col-span-1">
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${project.projectStatuses?.length < 1 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
                       {project.projectStatuses?.length || 0}명
                     </span>
                   </div>
