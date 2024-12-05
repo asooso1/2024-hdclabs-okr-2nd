@@ -3,6 +3,7 @@
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
+  isFormData?: boolean;
 }
 
 class ApiClient {
@@ -16,7 +17,7 @@ class ApiClient {
     endpoint: string,
     config: RequestConfig = {},
   ): Promise<T> {
-    const { params, ...init } = config;
+    const { params, isFormData, ...init } = config;
 
     // URL 파라미터 처리
     const queryString = params
@@ -26,12 +27,17 @@ class ApiClient {
     const url = `${endpoint}${queryString}`;
 
     try {
+      // FormData 요청의 경우 전달된 headers를 그대로 사용
+      const headers = isFormData
+        ? init.headers  // FormData 요청의 경우 전달된 headers만 사용
+        : {
+            "Content-Type": "application/json",
+            ...init.headers,
+          };
+
       const response = await fetch(url, {
         ...init,
-        headers: {
-          "Content-Type": "application/json",
-          ...init.headers,
-        },
+        headers,
       });
 
       if (!response.ok) {
@@ -64,9 +70,27 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+  public patch<T>(endpoint: string, data?: any, config?: RequestConfig) {
+    return this.request<T>(endpoint, {
+      ...config,
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
 
   public delete<T>(endpoint: string, config?: RequestConfig) {
     return this.request<T>(endpoint, { ...config, method: "DELETE" });
+  }
+
+  public postFormData<T>(endpoint: string, formData: FormData) {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      },
+      isFormData: true
+    });
   }
 }
 

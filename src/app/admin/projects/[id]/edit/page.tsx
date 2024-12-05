@@ -3,7 +3,7 @@ import EditProject from "@/screens/EditProject";
 
 const EditProjectPage = () => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div></div>}>
       <EditProject />
     </Suspense>
   );

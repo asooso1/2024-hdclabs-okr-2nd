@@ -34,7 +34,7 @@ const TablesPage = () => {
       <Breadcrumb pageName="프로젝트 목록" />
 
       <div className="flex flex-col gap-10">
-        <WorkerTable projects={projects} loading={loading} />
+        <WorkerTable projects={projects as Project[]} loading={loading} />
         {/* <TableOne />
         <TableThree /> */}
       </div>

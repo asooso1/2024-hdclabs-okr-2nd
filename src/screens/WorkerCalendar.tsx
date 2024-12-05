@@ -67,8 +67,8 @@ export default function CalendarPage() {
         const scheduleEvents: Event[] = userSchedules.map(status => ({
           id: `schedule-${status.schedule}`,
           title: "나의 근무일",
-          startTime: new Date(status.schedule),
-          endTime: new Date(status.schedule),
+          startTime: new Date(status.schedule || ''),
+          endTime: new Date(status.schedule || ''),
           color: '#F59E0B' // 근무일 색상 (주황색)
         }));
 

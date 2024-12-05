@@ -3,16 +3,16 @@ export interface WorkResult {
   users?: User[];
 }
 
-type ProjectStatus = {
+// 프로젝트 관련 타입
+export interface ProjectStatus {
   userId: string;
-  userName: string;
+  userName: string | null;
   schedule: string;
   before: string | null;
   after: string | null;
   confirmation: string | null;
-  status: string;
-};
-// 프로젝트 관련 타입
+}
+
 export interface Project {
   createdAt: string;
   updatedAt: string;
@@ -25,8 +25,27 @@ export interface Project {
   longitude: number;
   from: string;
   to: string;
-  projectStatuses?: ProjectStatus[];
-  preferences?: string[];
+  preferences: [];
+  projectStatuses: [
+    {
+      userId?: string;
+      userName?: string;
+      schedule?: string;
+      before?: {
+        createdAt?  : string;
+        updatedAt?: string;
+        imageUrls?: string[];
+        description?: string;
+      } | null;
+      after?: {
+        createdAt?: string;
+        updatedAt?: string;
+        imageUrls?: string[];
+        description?: string;
+      } | null;
+      confirmation?: null;
+    },
+  ];
 }
 
 // 사용자 관련 타입
@@ -64,7 +83,7 @@ export interface SignInResponse {
 }
 
 export interface ProjectResult {
-  type: 'BEFORE' | 'AFTER' | 'CONFIRM';
+  division: 'BEFORE' | 'AFTER' | 'CONFIRM';
   userId: string;
   schedule: string;
   description: string;

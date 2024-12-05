@@ -104,14 +104,14 @@ const WorkerTable = ({ projects, loading }: TableTwoProps) => {
         <div className="flex items-center col-span-2">
           <p className="font-medium">작업 기간</p>
         </div>
-        <div className="flex items-center col-span-2 hidden md:block">
-          <p className="font-medium">비고</p>
+        <div className="flex items-center col-span-2">
+          <p className="font-medium">출근 예정일</p>
         </div>
         <div className="flex items-center col-span-2 hidden md:block">
           <p className="font-medium">작업 위치</p>
         </div>
         <div className="flex items-center col-span-2 hidden md:block">
-          <p className="font-medium">작업 참여자</p>
+          <p className="font-medium">비고</p>
         </div>
       </div>
 
@@ -131,14 +131,25 @@ const WorkerTable = ({ projects, loading }: TableTwoProps) => {
               <div className="flex items-center col-span-2">
                 <p className="text-sm text-black dark:text-white">{new Date(project.from).toLocaleDateString()} <br className="block md:hidden" />~ {new Date(project.to).toLocaleDateString()}</p>
               </div>
-              <div className="flex items-center col-span-2 hidden md:block">
-                <p className="text-sm text-black dark:text-white">{project.description || '-'}</p>
+              <div className="flex items-center col-span-2">
+                <p className="text-sm text-black dark:text-white">
+                  {project.projectStatuses?.find(
+                    status => status.userId === localStorage.getItem('userId')
+                  )?.schedule 
+                    ? new Date(project.projectStatuses.find(
+                        status => status.userId === localStorage.getItem('userId')
+                      )!.schedule).toLocaleDateString()
+                    : '-'}
+                </p>
               </div>
               <div className="flex items-center col-span-2 hidden md:block">
                 <p className="text-sm text-black dark:text-white">{project.address || '-'}</p>
               </div>
-              <div className="flex items-center col-span-2 hidden md:block">
+              {/* <div className="flex items-center col-span-2 hidden md:block">
                 <p className="text-sm text-black dark:text-white">{project.projectStatuses?.length === 1 ? `${project.projectStatuses[0].userName}` : project.projectStatuses?.map((status) => status.userName).join(', ') || '-'}</p>
+              </div> */}
+              <div className="flex items-center col-span-2 hidden md:block">
+                <p className="text-sm text-black dark:text-white">{project.description || '-'}</p>
               </div>
             </div>
           </Link>

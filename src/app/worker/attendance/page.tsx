@@ -26,8 +26,18 @@ interface Project {
     userId: string;
     userName: string | null;
     schedule: string;
-    before: string | null;
-    after: string | null;
+    before: { 
+      createdAt?: string,
+      updatedAt?: string,
+      imageUrls?: string[],
+      description?: string,
+    } | null;
+    after: { 
+      createdAt?: string,
+      updatedAt?: string,
+      imageUrls?: string[],
+      description?: string,
+    } | null;
     confirmation: string | null;
   }[];
 }
@@ -37,8 +47,18 @@ const AttendancePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentStatus, setCurrentStatus] = useState<{
-    before: string | null;
-    after: string | null;
+    before: { 
+      createdAt?: string,
+      updatedAt?: string 
+      imageUrls?: string[],
+      description?: string
+    } | null;
+    after: { 
+      createdAt?: string,
+      updatedAt?: string,
+      imageUrls?: string[],
+      description?: string,
+    } | null;
   }>({ before: null, after: null });
   const [location, setLocation] = useState<{
     latitude: number | null;
@@ -55,7 +75,7 @@ const AttendancePage = () => {
         const filteredProjects = (response?.projects || []).filter(project => 
           project.projectStatuses?.some(status => status.userId === localStorage.getItem('userId'))
         );
-        setProjects(filteredProjects);
+        setProjects(filteredProjects as Project[]);
                 
         if (filteredProjects.length > 0) {
           const projectId = new URLSearchParams(window.location.search).get('projectId');
@@ -63,7 +83,7 @@ const AttendancePage = () => {
             ? filteredProjects.find(project => project.id === projectId)
             : filteredProjects[0];
             
-          setSelectedProject(projectToSelect || filteredProjects[0]);
+          setSelectedProject(projectToSelect as Project || filteredProjects[0]);
         }
       } catch (error) {
         console.error("프로젝트 데이터 가져오기 실패:", error);
@@ -79,7 +99,7 @@ const AttendancePage = () => {
   useEffect(() => {
     if (selectedProject) {
       const userStatus = selectedProject.projectStatuses?.find(
-        status => status.userId === "현재_사용자_ID"
+        status => status.userId === localStorage.getItem('userId')
       );
       if (userStatus) {
         setCurrentStatus({
@@ -97,7 +117,7 @@ const AttendancePage = () => {
         return;
       }
       navigator.geolocation.getCurrentPosition(resolve, reject);
-      console.log(navigator.geolocation);
+      
     });
   };
 
@@ -109,11 +129,8 @@ const AttendancePage = () => {
         longitude: location.coords.longitude
       });
 
-      const formData = new FormData();
-      formData.append('images', file);
-
       const data = {
-        type: type === 'checkIn' ? 'BEFORE' : 'AFTER',
+        division: type === 'checkIn' ? 'BEFORE' : 'AFTER',
         userId: localStorage.getItem('userId') || '',
         schedule: new Date().toISOString().split('T')[0],
         description: type === 'checkIn' ? '출근 등록' : '퇴근 등록',
@@ -121,22 +138,38 @@ const AttendancePage = () => {
         longitude: location.coords.longitude.toString()
       };
 
-      formData.append('data', JSON.stringify(data));
-
-      // API 호출 로직 추가 예정
+      setLoading(true);
+      const response = await userApi.projectResult(selectedProject?.id || '', data as ProjectResult, [file]);
+      
       if (type === 'checkIn') {
-        const response = await userApi.projectResult(selectedProject?.id || '', data as ProjectResult, [file]);
-        console.log(response)
-        setCurrentStatus(prev => ({ ...prev, before: new Date().toISOString() }));
+        setCurrentStatus(prev => ({
+          ...prev,
+          before: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            imageUrls: [],
+            description: '출근 등록'
+          }
+        }));
         toast.success('정상적으로 출근 처리되었습니다.');
       } else {
-        setCurrentStatus(prev => ({ ...prev, after: new Date().toISOString() }));
+        setCurrentStatus(prev => ({
+          ...prev,
+          after: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            imageUrls: [],
+            description: '퇴근 등록'
+          }
+        }));
         toast.success('정상적으로 퇴근 처리되었습니다.');
       }
     } catch (error) {
       console.error('출퇴근 처리 중 오류 발생:', error);
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
       toast.error(`위치 정보 오류: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -152,39 +185,31 @@ const AttendancePage = () => {
     }
   };
 
-  const handleConfirmation = async () => {
+  const handleConfirmation = async (file?: File) => {
     try {
-      const location = await getCurrentLocation();
-      
-      const formData = new FormData();
-      // 작업확인서에 필요한 이미지가 있다면 추가
-      // formData.append('images', imageFile);
-
       const data = {
-        type: 'CONFIRM',
+        division: 'CONFIRM',
         userId: localStorage.getItem('userId') || '',
         schedule: new Date().toISOString().split('T')[0],
         description: '작업확인서 등록',
-        latitude: location.coords.latitude.toString(),
-        longitude: location.coords.longitude.toString()
+        latitude: location.latitude?.toString() || '',
+        longitude: location.longitude?.toString() || ''
       };
 
-      formData.append('data', JSON.stringify(data));
-
-      // API 호출 로직 추가 예정
+      setLoading(true);
+      const response = await userApi.projectResult(selectedProject?.id || '', data as ProjectResult, file ? [file] : []);
       toast.success('작업확인서가 정상적으로 등록되었습니다.');
     } catch (error) {
       console.error('작업확인서 등록 중 오류 발생:', error);
       toast.error('작업확인서 등록 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (loading) {
-    return <Loader />;
-  }
-
+  
   return (
     <DefaultLayout>
+      {loading && <Loader />}
       <ToastContainer />
       <Breadcrumb pageName="출퇴근 관리" />
       <div className="mx-auto max-w-5xl">
@@ -277,13 +302,17 @@ const AttendancePage = () => {
                         <div className="flex-1 p-4 rounded-lg bg-gray-50 dark:bg-meta-4">
                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">출근 시간</p>
                           <p className="font-medium text-black dark:text-white">
-                            {currentStatus.before ? new Date(currentStatus.before).toLocaleTimeString() : '-'}
+                            {currentStatus.before && currentStatus.before.updatedAt 
+                              ? new Date(currentStatus.before.updatedAt).toLocaleTimeString() 
+                              : '-'}
                           </p>
                         </div>
                         <div className="flex-1 p-4 rounded-lg bg-gray-50 dark:bg-meta-4">
                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">퇴근 시간</p>
                           <p className="font-medium text-black dark:text-white">
-                            {currentStatus.after ? new Date(currentStatus.after).toLocaleTimeString() : '-'}
+                            {currentStatus.after && currentStatus.after.updatedAt 
+                              ? new Date(currentStatus.after.updatedAt).toLocaleTimeString() 
+                              : '-'}
                           </p>
                         </div>
                       </div>
@@ -308,7 +337,7 @@ const AttendancePage = () => {
                       <button
                         onClick={handleCheckIn}
                         disabled={currentStatus.before !== null}
-                        className={`flex items-center justify-center gap-2 rounded-lg px-6 py-4 text-center font-medium transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-lg px-6 py-4 text-center font-medium transition-all h-28 ${
                           currentStatus.before === null
                             ? 'bg-primary text-white hover:bg-opacity-90'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-meta-4'
@@ -322,7 +351,7 @@ const AttendancePage = () => {
                       <button
                         onClick={handleCheckOut}
                         disabled={currentStatus.before === null || currentStatus.after !== null}
-                        className={`flex items-center justify-center gap-2 rounded-lg px-6 py-4 text-center font-medium transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-lg px-6 py-4 text-center font-medium transition-all h-28 ${
                           currentStatus.before && !currentStatus.after
                             ? 'bg-meta-3 text-white hover:bg-opacity-90'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-meta-4'
@@ -334,9 +363,21 @@ const AttendancePage = () => {
                         퇴근하기
                       </button>
                     </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="confirmationInput"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleConfirmation(file);
+                        }
+                      }}
+                    />
                     <button
-                      onClick={handleConfirmation}
-                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-black px-6 py-4 text-center font-medium text-white hover:bg-opacity-90 transition-all"
+                      onClick={() => document.getElementById('confirmationInput')?.click()}
+                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-black px-6 py-4 text-center font-medium text-white hover:bg-opacity-90 transition-all h-28"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

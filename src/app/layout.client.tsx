@@ -26,8 +26,8 @@ export default function RootLayoutClient({
     if (projectId) {
       localStorage.setItem('projectId', projectId);
     }
-
-    setTimeout(() => setLoading(false), 1000);
+    setLoading(false)
+    // setTimeout(() => setLoading(false), 1000);
   }, []);
 
   return (

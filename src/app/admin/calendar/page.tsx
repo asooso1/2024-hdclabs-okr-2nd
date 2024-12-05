@@ -3,7 +3,7 @@ import AdminCalendar from "@/screens/AdminCalendar";
 
 const CalendarPage = () => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div></div>}>
       <AdminCalendar />
     </Suspense>
   );

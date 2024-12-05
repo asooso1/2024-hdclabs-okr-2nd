@@ -33,13 +33,6 @@ const TablesPage = () => {
     <DefaultLayout>
       <Breadcrumb pageName="프로젝트 목록" />
       
-      <div className="mb-4">
-        <Link href="/admin/projects/add">
-          <button className="bg-blue-500 text-white px-4 py-2 rounded">
-            프로젝트 추가
-          </button>
-        </Link>
-      </div>
 
       <div className="flex flex-col gap-10">
         <AdminProject projects={projects} loading={loading} />
