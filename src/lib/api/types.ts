@@ -32,7 +32,7 @@ export interface Project {
       userName?: string;
       schedule?: string;
       before?: {
-        createdAt?  : string;
+        createdAt?: string;
         updatedAt?: string;
         imageUrls?: string[];
         description?: string;
@@ -83,10 +83,35 @@ export interface SignInResponse {
 }
 
 export interface ProjectResult {
-  division: 'BEFORE' | 'AFTER' | 'CONFIRM';
+  division: "BEFORE" | "AFTER" | "CONFIRM";
   userId: string;
   schedule: string;
   description: string;
   latitude: string;
   longitude: string;
 }
+
+export interface AttendanceDashboard {
+  projectId: string;
+  projectName: string;
+  users: {
+    userId: string;
+    userName: string;
+    normals: number;
+    absents: number;
+    details: [
+      {
+        schedule: string;
+        day: string;
+        type: string;
+        classification: string;
+        before: boolean;
+        after: boolean;
+        confirmation: boolean;
+      },
+    ];
+  }[];
+}
+
+
+export type PeriodType = 'DAILY' | 'WEEKLY' | 'MONTHLY';

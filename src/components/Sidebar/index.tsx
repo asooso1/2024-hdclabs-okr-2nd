@@ -445,7 +445,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         </div>
         {/* <!-- SIDEBAR HEADER --> */}
 
-        <div className="flex items-center gap-3 justify-center p-4 lg:p-6 lg:flex hidden">
+        <div className="flex items-center gap-3 justify-center p-4 lg:p-5 lg:flex hidden">
           <span className="h-12 w-12 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 flex items-center justify-center text-white">
             {user && getInitial(user.name)}
           </span>

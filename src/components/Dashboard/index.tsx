@@ -1,11 +1,15 @@
 "use client";
 import dynamic from "next/dynamic";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import { adminApi } from "@/lib/api/admin";
 import ChartOne from "../Charts/ChartOne";
 import ChartTwo from "../Charts/ChartTwo";
 import ChatCard from "../Chat/ChatCard";
 import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
+import { AttendanceDashboard } from "@/lib/api/types";
 
 const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
   ssr: false,
@@ -15,11 +19,99 @@ const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
   ssr: false,
 });
 
+interface ParsedAttendanceData {
+  totalTasks: number;
+  completedCheckIn: number;
+  completedCheckOut: number;
+  registeredReports: number;
+  records: {
+    workerId: string;
+    workerName: string;
+    checkInTime: string | null;
+    checkOutTime: string | null;
+    taskCount: number;
+    status: 'PENDING' | 'CHECKED_IN' | 'CHECKED_OUT';
+  }[];
+}
+
 const Dashboard: React.FC = () => {
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [attendanceData, setAttendanceData] = useState<AttendanceDashboard[]>([]);
+  const [parsedData, setParsedData] = useState<ParsedAttendanceData>({
+    totalTasks: 0,
+    completedCheckIn: 0,
+    completedCheckOut: 0,
+    registeredReports: 0,
+    records: []
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  // AttendanceDashboard 데이터를 파싱하는 함수
+  const parseAttendanceData = (data: AttendanceDashboard[]): ParsedAttendanceData => {
+    const result: ParsedAttendanceData = {
+      totalTasks: 0,
+      completedCheckIn: 0,
+      completedCheckOut: 0,
+      registeredReports: 0,
+      records: []
+    };
+
+    data.forEach((project) => {
+      project.users.forEach((user) => {
+        user.details.forEach((detail) => {
+          result.totalTasks++;
+          if (detail.before) result.completedCheckIn++;
+          if (detail.after) result.completedCheckOut++;
+          if (detail.confirmation) result.registeredReports++;
+
+          result.records.push({
+            workerId: user.userId,
+            workerName: user.userName,
+            checkInTime: detail.before ? detail.schedule : null,
+            checkOutTime: detail.after ? detail.schedule : null,
+            taskCount: user.normals,
+            status: detail.after ? 'CHECKED_OUT'
+              : detail.before ? 'CHECKED_IN'
+                : 'PENDING'
+          });
+        });
+      });
+    });
+
+    return result;
+  };
+
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await adminApi.getAttendanceDashboard(
+          'DAILY',
+          format(startDate, 'yyyy-MM-dd'),
+          format(endDate, 'yyyy-MM-dd')
+        );
+        setAttendanceData(response);
+        setParsedData(parseAttendanceData(response));
+      } catch (error) {
+        console.error('출퇴근 현황 조회 실패:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAttendanceData();
+  }, [startDate, endDate]);
+
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="오늘 작업 건수" total="321건" rate="0.43%" levelUp>
+        <CardDataStats
+          title="오늘 작업 건수"
+          total={`${parsedData.totalTasks}건`}
+          rate="0.43%"
+          levelUp
+        >
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -38,7 +130,12 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="출근 완료 작업" total="7건" rate="4.35%" levelUp>
+        <CardDataStats
+          title="출근 완료 작업"
+          total={`${parsedData.completedCheckIn}건`}
+          rate="4.35%"
+          levelUp
+        >
           <svg
             className="fill-primary dark:fill-white"
             width="20"
@@ -61,7 +158,12 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="퇴근 완료 작업" total="16건" rate="2.59%" levelDown>
+        <CardDataStats
+          title="퇴근 완료 작업"
+          total={`${parsedData.completedCheckOut}건`}
+          rate="2.59%"
+          levelDown
+        >
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -80,7 +182,12 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="작업 확인서 등록" total="4건" rate={"0.953%"} levelDown>
+        <CardDataStats
+          title="작업 확인서 등록"
+          total={`${parsedData.registeredReports}건`}
+          rate="0.95%"
+          levelDown
+        >
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -105,15 +212,107 @@ const Dashboard: React.FC = () => {
         </CardDataStats>
       </div>
 
+      <div className="mt-4 rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <h4 className="text-xl font-semibold text-black dark:text-white">
+            작업자 출/퇴근 현황
+          </h4>
+          <div className="flex gap-3">
+            <div className="relative">
+              <input
+                type="date"
+                value={format(startDate, 'yyyy-MM-dd')}
+                onChange={(e) => setStartDate(new Date(e.target.value))}
+                className="w-44 rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
+              />
+            </div>
+            <span className="self-center">~</span>
+            <div className="relative">
+              <input
+                type="date"
+                value={format(endDate, 'yyyy-MM-dd')}
+                onChange={(e) => setEndDate(new Date(e.target.value))}
+                className="w-44 rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                <th className="min-w-[220px] py-4 px-4 font-medium text-black dark:text-white">
+                  작업자
+                </th>
+                <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
+                  출근 시간
+                </th>
+                <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
+                  퇴근 시간
+                </th>
+                <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
+                  작업 건수
+                </th>
+                <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
+                  상태
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-4">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  </td>
+                </tr>
+              ) : parsedData.records.map((record) => (
+                <tr key={record.workerId}>
+                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                    <p className="text-black dark:text-white">{record.workerName}</p>
+                  </td>
+                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                    <p className="text-black dark:text-white">
+                      {record.checkInTime ? format(new Date(record.checkInTime), 'HH:mm') : '-'}
+                    </p>
+                  </td>
+                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                    <p className="text-black dark:text-white">
+                      {record.checkOutTime ? format(new Date(record.checkOutTime), 'HH:mm') : '-'}
+                    </p>
+                  </td>
+                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                    <p className="text-black dark:text-white">{record.taskCount}건</p>
+                  </td>
+                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+                    <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium
+                      ${record.status === 'CHECKED_IN' ? 'text-success bg-success/10' : ''}
+                      ${record.status === 'CHECKED_OUT' ? 'text-primary bg-primary/10' : ''}
+                      ${record.status === 'PENDING' ? 'text-warning bg-warning/10' : ''}`
+                    }>
+                      {record.status === 'CHECKED_IN' && '출근'}
+                      {record.status === 'CHECKED_OUT' && '퇴근'}
+                      {record.status === 'PENDING' && '대기'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
         <ChartOne />
         <ChartTwo />
         <ChartThree />
         <MapOne />
-        <div className="col-span-12 xl:col-span-8">
+        {/* <div className="col-span-12 xl:col-span-8">
           <TableOne />
         </div>
-        <ChatCard />
+        <ChatCard /> */}
       </div>
     </>
   );

@@ -255,7 +255,7 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
             <div className="col-span-3 md:col-span-2">작업 기간</div>
             <div className="hidden md:block md:col-span-2">작업 위치</div>
             <div className="hidden md:block md:col-span-2">비고</div>
-            <div className="hidden md:block md:col-span-1">참여자</div>
+            <div className="hidden md:block md:col-span-1">작업자</div>
           </div>
 
           <div className="divide-y divide-gray-200 dark:divide-gray-700">

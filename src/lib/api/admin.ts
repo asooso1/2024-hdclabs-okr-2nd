@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { Project, User } from "./types";
+import { Project, User, AttendanceDashboard } from "./types";
 
 export const adminApi = {
   // 관리자의 프로젝트 목록 조회
@@ -34,5 +34,10 @@ export const adminApi = {
 
   createUser: (data: { name: string; phoneNumber: string; cost: number; role: string }) => {
     return apiClient.post<User>('/api/users/register', data);
+  },
+  
+  // 대시보드 조회
+  getAttendanceDashboard: (type: 'DAILY' | 'WEEKLY' | 'MONTHLY', startDate: string, endDate: string) => {
+    return apiClient.get<AttendanceDashboard[]>(`/api/dashboards/projects?type=${type}&startDate=${startDate}&endDate=${endDate}`);
   },
 };
