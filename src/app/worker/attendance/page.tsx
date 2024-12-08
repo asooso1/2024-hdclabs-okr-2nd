@@ -43,6 +43,24 @@ interface Project {
   }[];
 }
 
+// 한국 시간 변환 헬퍼 함수 추가
+function formatKoreanTime(dateString: string) {
+  return new Date(dateString).toLocaleTimeString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function formatKoreanDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
 const AttendancePage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,11 +155,21 @@ const AttendancePage = () => {
         longitude: location.coords.longitude
       });
 
+      // 한국 시간 기준으로 날짜 포맷팅
+      const now = new Date();
+      const koreanDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+      const formattedDate = koreanDate.getFullYear() + '-' + 
+        String(koreanDate.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(koreanDate.getDate()).padStart(2, '0');
+
+      console.log('Korean Date:', koreanDate);
+      console.log('Formatted Date:', formattedDate); // YYYY-MM-DD 형식
+
       const data = {
         division: modalState.type === 'checkIn' ? 'BEFORE' : 
                  modalState.type === 'checkOut' ? 'AFTER' : 'CONFIRM',
         userId: localStorage.getItem('userId') || '',
-        schedule: new Date().toISOString().split('T')[0],
+        schedule: formattedDate,
         description: description,
         latitude: location.coords.latitude.toString(),
         longitude: location.coords.longitude.toString()
@@ -150,12 +178,16 @@ const AttendancePage = () => {
       setLoading(true);
       await userApi.projectResult(selectedProject?.id || '', data as ProjectResult, [file]);
       
+      // 현재 한국 시간으로 상태 업데이트
+      const koreanTimestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+      const koreanISOString = new Date(koreanTimestamp).toISOString();
+
       if (modalState.type === 'checkIn') {
         setCurrentStatus(prev => ({
           ...prev,
           before: {
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: koreanISOString,
+            updatedAt: koreanISOString,
             imageUrls: [],
             description
           }
@@ -165,8 +197,8 @@ const AttendancePage = () => {
         setCurrentStatus(prev => ({
           ...prev,
           after: {
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: koreanISOString,
+            updatedAt: koreanISOString,
             imageUrls: [],
             description
           }
@@ -267,7 +299,7 @@ const AttendancePage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <p className="font-medium">
-                          {new Date(selectedProject.from).toLocaleDateString()} ~ {new Date(selectedProject.to).toLocaleDateString()}
+                          {formatKoreanDate(selectedProject.from)} ~ {formatKoreanDate(selectedProject.to)}
                         </p>
                       </div>
                     </div>
@@ -294,7 +326,7 @@ const AttendancePage = () => {
                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">출근 시간</p>
                           <p className="font-medium text-black dark:text-white">
                             {currentStatus.before && currentStatus.before.updatedAt 
-                              ? new Date(currentStatus.before.updatedAt).toLocaleTimeString() 
+                              ? formatKoreanTime(currentStatus.before.updatedAt)
                               : '-'}
                           </p>
                         </div>
@@ -302,7 +334,7 @@ const AttendancePage = () => {
                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">퇴근 시간</p>
                           <p className="font-medium text-black dark:text-white">
                             {currentStatus.after && currentStatus.after.updatedAt 
-                              ? new Date(currentStatus.after.updatedAt).toLocaleTimeString() 
+                              ? formatKoreanTime(currentStatus.after.updatedAt)
                               : '-'}
                           </p>
                         </div>

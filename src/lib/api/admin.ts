@@ -37,7 +37,7 @@ export const adminApi = {
   },
   
   // 대시보드 조회
-  getAttendanceDashboard: (type: 'DAILY' | 'WEEKLY' | 'MONTHLY', startDate: string, endDate: string) => {
+  getAttendanceDashboard: (type: 'DAILY', startDate: string, endDate: string) => {
     return apiClient.get<AttendanceDashboard[]>(`/api/dashboards/projects?type=${type}&startDate=${startDate}&endDate=${endDate}`);
   },
 };

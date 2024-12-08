@@ -47,7 +47,7 @@ const Day: React.FC<DayProps> = ({ date, events, isCurrentMonth, onClick }) => {
                   backgroundColor: event.color ? `${event.color}20` : '#3C50E020'
                 }}
                 className={`flex h-5 items-center ${
-                  isFirst ? `pl-2 rounded-l-full border-l-4 ${
+                  isFirst ? `pl-2 rounded-l-full ${
                     event.color ? `border-[${event.color}]` : 'border-blue-500'
                   }` : "pl-0"
                 }
@@ -55,7 +55,7 @@ const Day: React.FC<DayProps> = ({ date, events, isCurrentMonth, onClick }) => {
                   ${!isFirst && !isLast ? "px-0" : ""}`}
               >
                 {isFirst && (
-                  <span className={`text-xs whitespace-nowrap z-10 font-medium ${
+                  <span className={`hidden sm:block text-xs whitespace-nowrap z-10 font-medium ${
                     event.color ? `text-[${event.color}]` : 'text-blue-800'
                   } sm:truncate dark:text-blue-100`}>
                     {event.title}

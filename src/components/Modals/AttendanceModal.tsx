@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ProjectResult } from "@/lib/api/types";
 import StaticMap from "@/components/Maps/StaticMap";
+import imageCompression from 'browser-image-compression';
 
 interface AttendanceModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function AttendanceModal({
   const [currentLocation, setCurrentLocation] = useState<{lat: number; lng: number} | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +60,12 @@ export function AttendanceModal({
     }
   }, [isOpen, type]);
 
+  useEffect(() => {
+    setSelectedFile(null);
+    setPreview(null);
+    setDescription("");
+  }, [type]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,15 +83,48 @@ export function AttendanceModal({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = async (file: File): Promise<File> => {
+    setIsCompressing(true);
+    console.log('압축 전 이미지 크기:', (file.size / (1024 * 1024)).toFixed(2) + 'MB');
+
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: 'webp',
+      initialQuality: 0.8
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      console.log('압축 후 이미지 크기:', (compressedFile.size / (1024 * 1024)).toFixed(2) + 'MB');
+      return compressedFile;
+    } catch (error) {
+      console.error('이미지 압축 중 오류:', error);
+      return file;
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        console.log('원본 파일 타입:', file.type);
+        const compressedFile = await compressImage(file);
+        console.log('압축 후 파일 타입:', compressedFile.type);
+        setSelectedFile(compressedFile);
+        
+        // 미리보기 생성
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('파일 처리 중 오류:', error);
+      }
     }
   };
 
@@ -213,10 +254,17 @@ export function AttendanceModal({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-center mb-4">
-                    <div className="animate-pulse text-gray-500">
-                      카메라가 실행됩니다...
-                    </div>
+                  <div className="flex flex-col items-center justify-center mb-4">
+                    {isCompressing ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-gray-500">이미지 최적화 중...</p>
+                      </div>
+                    ) : (
+                      <div className="animate-pulse text-gray-500">
+                        카메라가 실행됩니다...
+                      </div>
+                    )}
                   </div>
                 )}
                 <input
@@ -237,7 +285,7 @@ export function AttendanceModal({
                   setPreview(null);
                   setSelectedFile(null);
                   if (type !== 'confirmation') {
-                    // 출퇴근인 경우 다시 촬영 시 자동으로 카메라 실행
+                    // 출근인 경우 다시 촬영 시 자동으로 카메라 실행
                     setTimeout(() => inputRef.current?.click(), 100);
                   }
                 }}
@@ -258,7 +306,6 @@ export function AttendanceModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="특이사항이 있다면 입력해주세요"
-              required
             />
           </div>
 

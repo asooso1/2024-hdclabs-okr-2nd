@@ -1,15 +1,18 @@
 "use client";
 import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import { adminApi } from "@/lib/api/admin";
 import ChartOne from "../Charts/ChartOne";
 import ChartTwo from "../Charts/ChartTwo";
 import ChatCard from "../Chat/ChatCard";
 import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
-import { AttendanceDashboard } from "@/lib/api/types";
+import { adminApi } from "@/lib/api/admin";
+import { AttendanceDashboard, User } from "@/lib/api/types";
+import { format, subDays } from "date-fns";
+import { ko } from "date-fns/locale";
+import { Tooltip } from "../Tooltip";
+import { useRouter } from "next/navigation";
+import * as XLSX from 'xlsx';
 
 const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
   ssr: false,
@@ -19,99 +22,210 @@ const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
   ssr: false,
 });
 
-interface ParsedAttendanceData {
-  totalTasks: number;
-  completedCheckIn: number;
-  completedCheckOut: number;
-  registeredReports: number;
-  records: {
-    workerId: string;
-    workerName: string;
-    checkInTime: string | null;
-    checkOutTime: string | null;
-    taskCount: number;
-    status: 'PENDING' | 'CHECKED_IN' | 'CHECKED_OUT';
-  }[];
+interface UserInfo {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  cost: number;
+  projectCount: number;
 }
 
 const Dashboard: React.FC = () => {
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const [attendanceData, setAttendanceData] = useState<AttendanceDashboard[]>([]);
-  const [parsedData, setParsedData] = useState<ParsedAttendanceData>({
-    totalTasks: 0,
-    completedCheckIn: 0,
-    completedCheckOut: 0,
-    registeredReports: 0,
-    records: []
-  });
+  const router = useRouter();
+  const [dashboardData, setDashboardData] = useState<AttendanceDashboard[]>([]);
+  const [userCosts, setUserCosts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // AttendanceDashboard 데이터를 파싱하는 함수
-  const parseAttendanceData = (data: AttendanceDashboard[]): ParsedAttendanceData => {
-    const result: ParsedAttendanceData = {
-      totalTasks: 0,
-      completedCheckIn: 0,
-      completedCheckOut: 0,
-      registeredReports: 0,
-      records: []
-    };
-
-    data.forEach((project) => {
-      project.users.forEach((user) => {
-        user.details.forEach((detail) => {
-          result.totalTasks++;
-          if (detail.before) result.completedCheckIn++;
-          if (detail.after) result.completedCheckOut++;
-          if (detail.confirmation) result.registeredReports++;
-
-          result.records.push({
-            workerId: user.userId,
-            workerName: user.userName,
-            checkInTime: detail.before ? detail.schedule : null,
-            checkOutTime: detail.after ? detail.schedule : null,
-            taskCount: user.normals,
-            status: detail.after ? 'CHECKED_OUT'
-              : detail.before ? 'CHECKED_IN'
-                : 'PENDING'
-          });
-        });
-      });
-    });
-
-    return result;
-  };
+  const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [dateRange, setDateRange] = useState({
+    startDate: '2024-01-01',
+    endDate: '2024-12-31'
+  });
+  const [userInfoMap, setUserInfoMap] = useState<Record<string, UserInfo>>({});
 
   useEffect(() => {
-    const fetchAttendanceData = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const response = await adminApi.getAttendanceDashboard(
-          'DAILY',
-          format(startDate, 'yyyy-MM-dd'),
-          format(endDate, 'yyyy-MM-dd')
-        );
-        setAttendanceData(response);
-        setParsedData(parseAttendanceData(response));
+        const [dashboardResponse, usersResponse] = await Promise.all([
+          adminApi.getAttendanceDashboard(
+            'DAILY',
+            dateRange.startDate,
+            dateRange.endDate
+          ),
+          adminApi.searchUsers('')
+        ]);
+
+        setDashboardData(dashboardResponse);
+
+        // 사용자별 정�� 매핑
+        const userInfo = usersResponse.reduce((acc, user) => {
+          // 프로젝트 수 계산
+          const projectCount = dashboardResponse.filter(project => 
+            project.users.some(u => u.userId === user.id)
+          ).length;
+
+          return {
+            ...acc,
+            [user.id]: {
+              id: user.id,
+              name: user.name,
+              phoneNumber: user.phoneNumber || '-',
+              cost: user.cost || 0,
+              projectCount
+            }
+          };
+        }, {} as Record<string, UserInfo>);
+        
+        setUserInfoMap(userInfo);
+        setUserCosts(usersResponse.reduce((acc, user) => ({
+          ...acc,
+          [user.id]: user.cost || 0
+        }), {}));
       } catch (error) {
-        console.error('출퇴근 현황 조회 실패:', error);
+        console.error("데이터 조회 실패:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAttendanceData();
-  }, [startDate, endDate]);
+    fetchData();
+  }, [dateRange]);
+
+  // 프로젝트별 통계 계산 함수 수정
+  const calculateProjectStats = (project: AttendanceDashboard) => {
+    return project.users.map(user => {
+      const stats = user.details.reduce(
+        (acc, detail) => {
+          if (detail.before && detail.after && detail.confirmation) {
+            acc.normal++;
+          } else if (detail.before || detail.after || detail.confirmation) {
+            acc.abnormal++;
+          }
+          return acc;
+        },
+        { normal: 0, abnormal: 0 }
+      );
+
+      // 일별 비용 계산
+      const dailyCost = (stats.normal + stats.abnormal) * (userCosts[user.userId] || 0);
+
+      return {
+        userId: user.userId,
+        userName: user.userName,
+        ...stats,
+        total: stats.normal + stats.abnormal,
+        cost: dailyCost
+      };
+    });
+  };
+
+  // 프로젝트 클릭 핸들러 추가
+  const handleProjectClick = (projectId: string) => {
+    router.push(`/admin/projects/${projectId}`);
+  };
+
+  const handleExcelDownload = () => {
+    // 엑셀 데이터 준비
+    const excelData = dashboardData.flatMap(project => {
+      const stats = calculateProjectStats(project);
+      
+      // 프로젝트별 데이터 행들
+      const projectRows = stats.map(stat => ({
+        '프로젝트명': project.projectName,
+        '작업자': stat.userName,
+        '연락처': userInfoMap[stat.userId]?.phoneNumber || '-',
+        '작업계획': stat.total,
+        '정상': stat.normal,
+        '이상': stat.abnormal,
+        '비용': stat.cost,
+      }));
+
+      // 프로젝트 소계 행 추가
+      const projectTotal = stats.reduce(
+        (acc, stat) => ({
+          normal: acc.normal + stat.normal,
+          abnormal: acc.abnormal + stat.abnormal,
+          total: acc.total + stat.total,
+          cost: acc.cost + stat.cost
+        }),
+        { normal: 0, abnormal: 0, total: 0, cost: 0 }
+      );
+
+      projectRows.push({
+        '프로젝트명': `${project.projectName} (소계)`,
+        '작업자': '',
+        '연락처': '',
+        '작업계획': projectTotal.total,
+        '정상': projectTotal.normal,
+        '이상': projectTotal.abnormal,
+        '비용': projectTotal.cost,
+      });
+
+      return projectRows;
+    });
+
+    // 총계 행 추가
+    const grandTotal = dashboardData.reduce((acc, project) => {
+      const stats = calculateProjectStats(project);
+      const projectTotal = stats.reduce(
+        (acc, stat) => ({
+          total: acc.total + stat.total,
+          normal: acc.normal + stat.normal,
+          abnormal: acc.abnormal + stat.abnormal,
+          cost: acc.cost + stat.cost
+        }),
+        { normal: 0, abnormal: 0, total: 0, cost: 0 }
+      );
+
+      return {
+        total: acc.total + projectTotal.total,
+        normal: acc.normal + projectTotal.normal,
+        abnormal: acc.abnormal + projectTotal.abnormal,
+        cost: acc.cost + projectTotal.cost
+      };
+    }, { total: 0, normal: 0, abnormal: 0, cost: 0 });
+
+    excelData.push({
+      '프로젝트명': '총계',
+      '작업자': '',
+      '연락처': '',
+      '작업계획': grandTotal.total,
+      '정상': grandTotal.normal,
+      '이상': grandTotal.abnormal,
+      '비용': grandTotal.cost,
+    });
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // 열 너비 설정
+    const columnWidths = [
+      { wch: 20 }, // 프로젝트명
+      { wch: 15 }, // 작업자
+      { wch: 15 }, // 연락처
+      { wch: 10 }, // 작업계획
+      { wch: 10 }, // 정상
+      { wch: 10 }, // 이상
+      { wch: 15 }, // 비용
+    ];
+    ws['!cols'] = columnWidths;
+
+    // 워크시트를 워크북에 추가
+    XLSX.utils.book_append_sheet(wb, ws, '작업현황');
+
+    // 파일명 생성 (현재 날짜 포함)
+    const today = new Date();
+    const fileName = `작업현황_${format(today, 'yyyy-MM-dd')}.xlsx`;
+
+    // 엑셀 파일 다운로드
+    XLSX.writeFile(wb, fileName);
+  };
 
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats
-          title="오늘 작업 건수"
-          total={`${parsedData.totalTasks}건`}
-          rate="0.43%"
-          levelUp
-        >
+        <CardDataStats title="오늘 작업 예정 건수" total="321건" rate="-">
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -130,12 +244,7 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats
-          title="출근 완료 작업"
-          total={`${parsedData.completedCheckIn}건`}
-          rate="4.35%"
-          levelUp
-        >
+        <CardDataStats title="출근 완료 작업" total="7건" rate="4.35%" levelUp>
           <svg
             className="fill-primary dark:fill-white"
             width="20"
@@ -158,12 +267,7 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats
-          title="퇴근 완료 작업"
-          total={`${parsedData.completedCheckOut}건`}
-          rate="2.59%"
-          levelDown
-        >
+        <CardDataStats title="퇴근 완료 작업" total="16건" rate="2.59%" levelDown>
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -182,12 +286,7 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats
-          title="작업 확인서 등록"
-          total={`${parsedData.registeredReports}건`}
-          rate="0.95%"
-          levelDown
-        >
+        <CardDataStats title="작업 확인서 등록" total="4건" rate={"0.953%"} levelDown>
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -212,95 +311,199 @@ const Dashboard: React.FC = () => {
         </CardDataStats>
       </div>
 
-      <div className="mt-4 rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <h4 className="text-xl font-semibold text-black dark:text-white">
-            작업자 출/퇴근 현황
-          </h4>
-          <div className="flex gap-3">
-            <div className="relative">
-              <input
-                type="date"
-                value={format(startDate, 'yyyy-MM-dd')}
-                onChange={(e) => setStartDate(new Date(e.target.value))}
-                className="w-44 rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
-              />
-            </div>
-            <span className="self-center">~</span>
-            <div className="relative">
-              <input
-                type="date"
-                value={format(endDate, 'yyyy-MM-dd')}
-                onChange={(e) => setEndDate(new Date(e.target.value))}
-                className="w-44 rounded-lg border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
-              />
+      <div className="mt-4 grid grid-cols-1 gap-4">
+        <div className="bg-white dark:bg-boxdark rounded-xl shadow-default border dark:border-strokedark border-stroke p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h3 className="text-xl font-semibold text-black dark:text-white">
+              프로젝트별 작업 현황
+            </h3>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">조회기간</span>
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-meta-4 rounded-lg p-1">
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:border-primary dark:focus:border-primary transition-colors"
+                  disabled={isLoading}
+                />
+                <span className="text-gray-500 dark:text-gray-400">~</span>
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:border-primary dark:focus:border-primary transition-colors"
+                  disabled={isLoading}
+                />
+              </div>
+              <button
+                onClick={handleExcelDownload}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                  />
+                </svg>
+                엑셀 다운로드
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                <th className="min-w-[220px] py-4 px-4 font-medium text-black dark:text-white">
-                  작업자
-                </th>
-                <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
-                  출근 시간
-                </th>
-                <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
-                  퇴근 시간
-                </th>
-                <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
-                  작업 건수
-                </th>
-                <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
-                  상태
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
+          <div className="overflow-x-auto relative">
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-boxdark/50 z-10 backdrop-blur-sm">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            <table className="w-full">
+              <thead>
                 <tr>
-                  <td colSpan={5} className="text-center py-4">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    </div>
+                  <th className="py-5 px-4 text-left bg-gray-50 dark:bg-meta-4 first:rounded-tl-lg last:rounded-tr-lg">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">프로젝트</span>
+                  </th>
+                  <th className="py-5 px-4 text-left bg-gray-50 dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">작업자</span>
+                  </th>
+                  <th className="py-5 px-4 text-center bg-gray-50 dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">작업계획</span>
+                  </th>
+                  <th className="py-5 px-4 text-center bg-gray-50 dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">정상</span>
+                  </th>
+                  <th className="py-5 px-4 text-center bg-gray-50 dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">이상</span>
+                  </th>
+                  <th className="py-5 px-4 text-right bg-gray-50 dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">비용</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {dashboardData.map(project => {
+                  const stats = calculateProjectStats(project);
+                  const projectTotal = stats.reduce(
+                    (acc, stat) => ({
+                      normal: acc.normal + stat.normal,
+                      abnormal: acc.abnormal + stat.abnormal,
+                      total: acc.total + stat.total,
+                      cost: acc.cost + stat.cost
+                    }),
+                    { normal: 0, abnormal: 0, total: 0, cost: 0 }
+                  );
+
+                  return (
+                    <React.Fragment key={project.projectId}>
+                      {stats.map((stat, index) => (
+                        <tr 
+                          key={`${project.projectId}-${stat.userId}`}
+                          className="border-b border-gray-100 dark:border-strokedark hover:bg-gray-50/50 dark:hover:bg-meta-4/50 transition-colors"
+                        >
+                          {index === 0 && (
+                            <td rowSpan={stats.length + 1} className="py-5 px-4 align-top">
+                              <button
+                                onClick={() => handleProjectClick(project.projectId)}
+                                className="text-black dark:text-white font-medium hover:text-primary dark:hover:text-primary transition-colors focus:outline-none group flex items-center gap-1"
+                              >
+                                <span>{project.projectName}</span>
+                                <svg 
+                                  className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    strokeWidth={2} 
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                                  />
+                                </svg>
+                              </button>
+                            </td>
+                          )}
+                          <td className="py-5 px-4">
+                            <Tooltip
+                              content={
+                                <div className="space-y-1">
+                                  <div className="font-medium">{stat.userName}</div>
+                                  <div className="text-xs text-gray-300">
+                                    <div>연락처: {userInfoMap[stat.userId]?.phoneNumber || '-'}</div>
+                                    <div>일일 비용: {userInfoMap[stat.userId]?.cost.toLocaleString()}원</div>
+                                    <div>참여 프로젝트: {userInfoMap[stat.userId]?.projectCount}개</div>
+                                  </div>
+                                </div>
+                              }
+                            >
+                              <span className="text-sm font-medium text-black dark:text-white cursor-help">
+                                {stat.userName}
+                              </span>
+                            </Tooltip>
+                          </td>
+                          <td className="py-5 px-4 text-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{stat.total}</span>
+                          </td>
+                          <td className="py-5 px-4 text-center">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-success/10 text-success text-sm font-medium">
+                              {stat.normal}
+                            </span>
+                          </td>
+                          <td className="py-5 px-4 text-center">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-danger/10 text-danger text-sm font-medium">
+                              {stat.abnormal}
+                            </span>
+                          </td>
+                          <td className="py-5 px-4 text-right">
+                            <span className="text-sm font-medium text-meta-5">{stat.cost.toLocaleString()}원</span>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-gray-50/70 dark:bg-meta-4/50 font-medium border-b border-gray-200 dark:border-strokedark">
+                        <td className="py-4 px-4">소계</td>
+                        <td className="py-4 px-4 text-center">{projectTotal.total}</td>
+                        <td className="py-4 px-4 text-center">{projectTotal.normal}</td>
+                        <td className="py-4 px-4 text-center">{projectTotal.abnormal}</td>
+                        <td className="py-4 px-4 text-right text-meta-5">{projectTotal.cost.toLocaleString()}원</td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
+                {/* 전체 합계 행 */}
+                <tr className="bg-primary/5 dark:bg-primary/10 font-bold">
+                  <td colSpan={2} className="py-5 px-4 text-black dark:text-white">총계</td>
+                  <td className="py-5 px-4 text-center text-black dark:text-white">
+                    {dashboardData.reduce((acc, project) => 
+                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.total, 0), 0
+                    )}
+                  </td>
+                  <td className="py-5 px-4 text-center text-success">
+                    {dashboardData.reduce((acc, project) => 
+                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.normal, 0), 0
+                    )}
+                  </td>
+                  <td className="py-5 px-4 text-center text-danger">
+                    {dashboardData.reduce((acc, project) => 
+                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.abnormal, 0), 0
+                    )}
+                  </td>
+                  <td className="py-5 px-4 text-right text-meta-5 font-bold">
+                    {dashboardData.reduce((acc, project) => 
+                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.cost, 0), 0
+                    ).toLocaleString()}원
                   </td>
                 </tr>
-              ) : parsedData.records.map((record) => (
-                <tr key={record.workerId}>
-                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                    <p className="text-black dark:text-white">{record.workerName}</p>
-                  </td>
-                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                    <p className="text-black dark:text-white">
-                      {record.checkInTime ? format(new Date(record.checkInTime), 'HH:mm') : '-'}
-                    </p>
-                  </td>
-                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                    <p className="text-black dark:text-white">
-                      {record.checkOutTime ? format(new Date(record.checkOutTime), 'HH:mm') : '-'}
-                    </p>
-                  </td>
-                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                    <p className="text-black dark:text-white">{record.taskCount}건</p>
-                  </td>
-                  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                    <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium
-                      ${record.status === 'CHECKED_IN' ? 'text-success bg-success/10' : ''}
-                      ${record.status === 'CHECKED_OUT' ? 'text-primary bg-primary/10' : ''}
-                      ${record.status === 'PENDING' ? 'text-warning bg-warning/10' : ''}`
-                    }>
-                      {record.status === 'CHECKED_IN' && '출근'}
-                      {record.status === 'CHECKED_OUT' && '퇴근'}
-                      {record.status === 'PENDING' && '대기'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -309,10 +512,10 @@ const Dashboard: React.FC = () => {
         <ChartTwo />
         <ChartThree />
         <MapOne />
-        {/* <div className="col-span-12 xl:col-span-8">
+        <div className="col-span-12 xl:col-span-8">
           <TableOne />
         </div>
-        <ChatCard /> */}
+        <ChatCard />
       </div>
     </>
   );
