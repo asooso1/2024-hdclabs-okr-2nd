@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { Project, User, AttendanceDashboard } from "./types";
+import { Project, User, AttendanceDashboard, WorkCount } from "./types";
 
 export const adminApi = {
   // 관리자의 프로젝트 목록 조회
@@ -39,5 +39,15 @@ export const adminApi = {
   // 대시보드 조회
   getAttendanceDashboard: (type: 'DAILY', startDate: string, endDate: string) => {
     return apiClient.get<AttendanceDashboard[]>(`/api/dashboards/projects?type=${type}&startDate=${startDate}&endDate=${endDate}`);
+  },
+
+  // 작업 건수 조회
+  getWorkCount: (targetDate: string) => {
+    return apiClient.get<WorkCount>(`/api/dashboards/schedules/${targetDate}?type=today`);
+  },
+
+  // 작업 차트
+  getWorkChart: (targetDate: string[]) => {
+    return apiClient.get<any>(`/api/dashboards/schedules/${targetDate.join(',')}?type=period`);
   },
 };

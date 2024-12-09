@@ -121,25 +121,16 @@ const options: ApexOptions = {
   },
 };
 
-interface ChartOneState {
-  series: {
-    name: string;
-    data: number[];
-  }[];
+interface ChartOneProps {
+  data: any | null;
 }
 
-const ChartOne: React.FC = () => {
-  const series = [
-    {
-      name: "전체 작업",
-      data: [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30, 45],
-    },
-
-    {
-      name: "완료된 작업",
-      data: [30, 25, 36, 30, 45, 35, 64, 52, 59, 36, 39, 51],
-    },
-  ]
+const ChartOne: React.FC<ChartOneProps> = ({ data }) => {
+  console.log(data)
+  const series = data.series;
+  if(options.xaxis) {
+    options.xaxis.categories = data.categories;
+  }
 
   return (
     <div className="col-span-12 rounded-lg border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-8">

@@ -113,5 +113,12 @@ export interface AttendanceDashboard {
   }[];
 }
 
+export interface WorkCount {
+  total: number;
+  before: number;
+  after: number;
+  confirmation: number;
+}
+
 
 export type PeriodType = 'DAILY' | 'WEEKLY' | 'MONTHLY';

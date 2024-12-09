@@ -10,6 +10,7 @@ import Loader from "@/components/common/Loader";
 import StaticMap from "@/components/Maps/StaticMap";
 import { ProjectResult } from "@/lib/api/types";
 import { AttendanceModal } from "@/components/Modals/AttendanceModal";
+import { ApiError } from '@/lib/api/client'
 
 interface Project {
   createdAt: string;
@@ -162,8 +163,8 @@ const AttendancePage = () => {
         String(koreanDate.getMonth() + 1).padStart(2, '0') + '-' + 
         String(koreanDate.getDate()).padStart(2, '0');
 
-      console.log('Korean Date:', koreanDate);
-      console.log('Formatted Date:', formattedDate); // YYYY-MM-DD 형식
+      // console.log('Korean Date:', koreanDate);
+      // console.log('Formatted Date:', formattedDate); // YYYY-MM-DD 형식
 
       const data = {
         division: modalState.type === 'checkIn' ? 'BEFORE' : 
@@ -208,9 +209,7 @@ const AttendancePage = () => {
         toast.success('작업확인서가 정상적으로 등록되었습니다.');
       }
     } catch (error) {
-      console.error('처리 중 오류 발생:', error);
-      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-      toast.error(`오류: ${errorMessage}`);
+      toast.error(`등록 실패: ${(error as ApiError).data.message}`);
     } finally {
       setLoading(false);
     }

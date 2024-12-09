@@ -1,18 +1,26 @@
-// const API_BASE_URL =
-//   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
   isFormData?: boolean;
 }
 
+export class ApiError extends Error {
+  public status: number;
+  public statusText: string;
+  public data: any;
+
+  constructor(status: number, statusText: string, data: any) {
+    super(`API Error: ${statusText}`);
+    this.status = status;
+    this.statusText = statusText;
+    this.data = data;
+
+    // TypeScript에서 Error 클래스를 상속할 때
+    // 인스턴스의 prototype을 명시적으로 설정하는 것이 권장됩니다.
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+}
+
 class ApiClient {
-  // private baseUrl: string;
-
-  // constructor(baseUrl: string = API_BASE_URL) {
-  //   this.baseUrl = baseUrl;
-  // }
-
   private async request<T>(
     endpoint: string,
     config: RequestConfig = {},
@@ -23,31 +31,35 @@ class ApiClient {
     const queryString = params
       ? `?${new URLSearchParams(params).toString()}`
       : "";
-
     const url = `${endpoint}${queryString}`;
 
-    try {
-      // FormData 요청의 경우 전달된 headers를 그대로 사용
-      const headers = isFormData
-        ? init.headers  // FormData 요청의 경우 전달된 headers만 사용
-        : {
-            "Content-Type": "application/json",
-            ...init.headers,
-          };
+    // FormData 요청의 경우 전달된 headers를 그대로 사용
+    const headers = isFormData
+      ? init.headers
+      : {
+          "Content-Type": "application/json",
+          ...init.headers,
+        };
 
+    try {
       const response = await fetch(url, {
         ...init,
         headers,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // 응답의 JSON을 파싱하여 에러 정보를 담는다.
+        const errorData = await response.json().catch(() => null);
+        // JSON 파싱 실패 시 null로 처리
+
+        throw new ApiError(response.status, response.statusText, errorData);
       }
 
       return await response.json();
     } catch (error) {
-      console.error("API request failed:", error);
-      throw error;
+      // console.log((error as ApiError).data.message)
+      // console.error("API request failed:", error);
+      throw error as ApiError;
     }
   }
 
@@ -70,6 +82,7 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
   public patch<T>(endpoint: string, data?: any, config?: RequestConfig) {
     return this.request<T>(endpoint, {
       ...config,
@@ -87,9 +100,9 @@ class ApiClient {
       method: "PATCH",
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        Accept: "application/json",
       },
-      isFormData: true
+      isFormData: true,
     });
   }
 }

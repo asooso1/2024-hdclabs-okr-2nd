@@ -68,24 +68,15 @@ const options: ApexOptions = {
   },
 };
 
-interface ChartTwoState {
-  series: {
-    name: string;
-    data: number[];
-  }[];
+interface ChartTwoProps {
+  data: any | null;
 }
 
-const ChartTwo: React.FC = () => {
-  const series = [
-    {
-      name: "완료된 작업",
-      data: [44, 55, 41, 67, 22, 43, 65],
-    },
-    {
-      name: "미완료 작업",
-      data: [13, 23, 20, 8, 13, 27, 15],
-    },
-  ];
+const ChartTwo: React.FC<ChartTwoProps> = ({ data }) => {
+  const series = data.series
+  if (options.xaxis) {
+    options.xaxis.categories = data.categories
+  }
 
   return (
     <div className="col-span-12 rounded-lg border border-stroke bg-white p-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-4">

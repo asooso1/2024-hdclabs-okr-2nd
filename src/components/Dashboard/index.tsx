@@ -3,18 +3,16 @@ import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
 import ChartOne from "../Charts/ChartOne";
 import ChartTwo from "../Charts/ChartTwo";
-import ChatCard from "../Chat/ChatCard";
-import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
 import { adminApi } from "@/lib/api/admin";
-import { AttendanceDashboard, User } from "@/lib/api/types";
-import { format, subDays } from "date-fns";
+import { AttendanceDashboard, User, WorkCount } from "@/lib/api/types";
+import { format, subDays, eachDayOfInterval } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Tooltip } from "../Tooltip";
 import { useRouter } from "next/navigation";
 import * as XLSX from 'xlsx';
 
-const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
+const StaticMap = dynamic(() => import("@/components/Maps/StaticMap"), {
   ssr: false,
 });
 
@@ -30,6 +28,26 @@ interface UserInfo {
   projectCount: number;
 }
 
+// workChart 데이터를 변환하는 함수 추가
+function transformChartData(workChart: Record<string, { total: number; done: number }>) {
+  // 날짜를 오름차순으로 정렬
+  const sortedDates = Object.keys(workChart).sort();
+  
+  return {
+    categories: sortedDates.map(date => format(new Date(date), 'MM/dd')),
+    series: [
+      {
+        name: '전체 작업',
+        data: sortedDates.map(date => workChart[date].total)
+      },
+      {
+        name: '완료된 작업',
+        data: sortedDates.map(date => workChart[date].done)
+      }
+    ]
+  };
+}
+
 const Dashboard: React.FC = () => {
   const router = useRouter();
   const [dashboardData, setDashboardData] = useState<AttendanceDashboard[]>([]);
@@ -41,6 +59,10 @@ const Dashboard: React.FC = () => {
     endDate: '2024-12-31'
   });
   const [userInfoMap, setUserInfoMap] = useState<Record<string, UserInfo>>({});
+  const [workCount, setWorkCount] = useState<WorkCount | null>(null);
+  const [workChart, setWorkChart] = useState<any| null>(null);
+  // targetStartDate: {total?: number; done?: number; "total-done"?: number};
+  // targetEndDate: {total?: number; done?: number; "total-done"?: number};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +79,7 @@ const Dashboard: React.FC = () => {
 
         setDashboardData(dashboardResponse);
 
-        // 사용자별 정�� 매핑
+        // 사용자별 정보 매핑
         const userInfo = usersResponse.reduce((acc, user) => {
           // 프로젝트 수 계산
           const projectCount = dashboardResponse.filter(project => 
@@ -91,23 +113,37 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, [dateRange]);
 
+  useEffect(() => {
+    const fetchWorkData = async () => {
+      try {
+        // 오늘 날짜 기준으로 데이터 조회
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const workCountResponse = await adminApi.getWorkCount(today);
+        setWorkCount(workCountResponse);
+
+        // 차트 데이터용 날짜 범위 (예: 최근 7일)
+        const endDate = format(new Date(), 'yyyy-MM-dd');
+        const startDate = format(subDays(new Date(), 6), 'yyyy-MM-dd');
+        const workChartResponse = await adminApi.getWorkChart(eachDayOfInterval({
+          start: new Date(startDate),
+          end: new Date(endDate)
+        }).map(date => format(date, 'yyyy-MM-dd')));
+        setWorkChart(workChartResponse);
+      } catch (error) {
+        console.error("작업 데이터 조회 실패:", error);
+      }
+    };
+
+    fetchWorkData();
+  }, []);
+
   // 프로젝트별 통계 계산 함수 수정
   const calculateProjectStats = (project: AttendanceDashboard) => {
     return project.users.map(user => {
-      const stats = user.details.reduce(
-        (acc, detail) => {
-          if (detail.before && detail.after && detail.confirmation) {
-            acc.normal++;
-          } else if (detail.before || detail.after || detail.confirmation) {
-            acc.abnormal++;
-          }
-          return acc;
-        },
-        { normal: 0, abnormal: 0 }
-      );
+      const stats = {normal: user.normals, abnormal: user.absents}
 
       // 일별 비용 계산
-      const dailyCost = (stats.normal + stats.abnormal) * (userCosts[user.userId] || 0);
+      const dailyCost = (stats.normal) * (userCosts[user.userId] || 0);
 
       return {
         userId: user.userId,
@@ -119,7 +155,7 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  // 프로젝트 클릭 핸들러 추가
+  // 프��젝트 클릭 핸들러 추가
   const handleProjectClick = (projectId: string) => {
     router.push(`/admin/projects/${projectId}`);
   };
@@ -225,7 +261,11 @@ const Dashboard: React.FC = () => {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="오늘 작업 예정 건수" total="321건" rate="-">
+        <CardDataStats
+          title="오늘 작업 예정 건수"
+          total={`${workCount?.total || 0}건`}
+          rate="-"
+        >
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -244,7 +284,12 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="출근 완료 작업" total="7건" rate="4.35%" levelUp>
+        <CardDataStats
+          title="출근 완료 작업"
+          total={`${workCount?.before || 0}건`}
+          rate="-"
+        >
+          {" "}
           <svg
             className="fill-primary dark:fill-white"
             width="20"
@@ -267,7 +312,12 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="퇴근 완료 작업" total="16건" rate="2.59%" levelDown>
+        <CardDataStats
+          title="퇴근 완료 작업"
+          total={`${workCount?.after || 0}건`}
+          rate="-"
+        >
+          {" "}
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -286,7 +336,11 @@ const Dashboard: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="작업 확인서 등록" total="4건" rate={"0.953%"} levelDown>
+        <CardDataStats
+          title="작업 확인서 등록"
+          total={`${workCount?.confirmation || 0}건`}
+          rate="-"
+        >
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -310,48 +364,76 @@ const Dashboard: React.FC = () => {
           </svg>
         </CardDataStats>
       </div>
+      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
+        <ChartOne data={workChart ? transformChartData(workChart) : null} />
+        <ChartTwo data={workChart ? transformChartData(workChart) : null} />
+        {/* <ChartThree />
+        <StaticMap 
+          lat={37.5665} // 서울시청 좌표
+          lng={126.9780}
+          height="400px"
+          level={10} // 더 넓은 지역을 보기 위해 level 값을 높게 설정
+          className="col-span-12 rounded-lg border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-7"
+        /> */}
+        {/* <div className="col-span-12 xl:col-span-8">
+          <TableOne />
+        </div>
+        <ChatCard /> */}
+      </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4">
-        <div className="bg-white dark:bg-boxdark rounded-xl shadow-default border dark:border-strokedark border-stroke p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="rounded-xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-xl font-semibold text-black dark:text-white">
               프로젝트별 작업 현황
             </h3>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">조회기간</span>
-              <div className="flex items-center gap-2 bg-gray-50 dark:bg-meta-4 rounded-lg p-1">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                조회기간
+              </span>
+              <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-1 dark:bg-meta-4">
                 <input
                   type="date"
                   value={dateRange.startDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:border-primary dark:focus:border-primary transition-colors"
+                  onChange={(e) =>
+                    setDateRange((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
+                  }
+                  className="rounded-md border border-gray-200 bg-white px-3 py-2 transition-colors focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:focus:border-primary"
                   disabled={isLoading}
                 />
                 <span className="text-gray-500 dark:text-gray-400">~</span>
                 <input
                   type="date"
                   value={dateRange.endDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:border-primary dark:focus:border-primary transition-colors"
+                  onChange={(e) =>
+                    setDateRange((prev) => ({
+                      ...prev,
+                      endDate: e.target.value,
+                    }))
+                  }
+                  className="rounded-md border border-gray-200 bg-white px-3 py-2 transition-colors focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:focus:border-primary"
                   disabled={isLoading}
                 />
               </div>
               <button
                 onClick={handleExcelDownload}
                 disabled={isLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
                 엑셀 다운로드
@@ -359,163 +441,228 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto relative">
+          <div className="relative overflow-x-auto">
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-boxdark/50 z-10 backdrop-blur-sm">
-                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm dark:bg-boxdark/50">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
               </div>
             )}
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className="py-5 px-4 text-left bg-gray-50 dark:bg-meta-4 first:rounded-tl-lg last:rounded-tr-lg">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">프로젝트</span>
+                  <th className="bg-gray-50 px-4 py-5 text-left first:rounded-tl-lg last:rounded-tr-lg dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      프로젝트
+                    </span>
                   </th>
-                  <th className="py-5 px-4 text-left bg-gray-50 dark:bg-meta-4">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">작업자</span>
+                  <th className="bg-gray-50 px-4 py-5 text-left dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      작업자
+                    </span>
                   </th>
-                  <th className="py-5 px-4 text-center bg-gray-50 dark:bg-meta-4">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">작업계획</span>
+                  <th className="bg-gray-50 px-4 py-5 text-center dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      작업계획
+                    </span>
                   </th>
-                  <th className="py-5 px-4 text-center bg-gray-50 dark:bg-meta-4">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">정상</span>
+                  <th className="bg-gray-50 px-4 py-5 text-center dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      정상
+                    </span>
                   </th>
-                  <th className="py-5 px-4 text-center bg-gray-50 dark:bg-meta-4">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">이상</span>
+                  <th className="bg-gray-50 px-4 py-5 text-center dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      이상
+                    </span>
                   </th>
-                  <th className="py-5 px-4 text-right bg-gray-50 dark:bg-meta-4">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">비용</span>
+                  <th className="bg-gray-50 px-4 py-5 text-right dark:bg-meta-4">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      비용
+                    </span>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {dashboardData.map(project => {
+                {dashboardData.map((project) => {
                   const stats = calculateProjectStats(project);
                   const projectTotal = stats.reduce(
                     (acc, stat) => ({
                       normal: acc.normal + stat.normal,
                       abnormal: acc.abnormal + stat.abnormal,
                       total: acc.total + stat.total,
-                      cost: acc.cost + stat.cost
+                      cost: acc.cost + stat.cost,
                     }),
-                    { normal: 0, abnormal: 0, total: 0, cost: 0 }
+                    { normal: 0, abnormal: 0, total: 0, cost: 0 },
                   );
 
                   return (
                     <React.Fragment key={project.projectId}>
                       {stats.map((stat, index) => (
-                        <tr 
+                        <tr
                           key={`${project.projectId}-${stat.userId}`}
-                          className="border-b border-gray-100 dark:border-strokedark hover:bg-gray-50/50 dark:hover:bg-meta-4/50 transition-colors"
+                          className="border-b border-gray-100 transition-colors hover:bg-gray-50/50 dark:border-strokedark dark:hover:bg-meta-4/50"
                         >
                           {index === 0 && (
-                            <td rowSpan={stats.length + 1} className="py-5 px-4 align-top">
+                            <td
+                              rowSpan={stats.length + 1}
+                              className="px-4 py-5 align-top"
+                            >
                               <button
-                                onClick={() => handleProjectClick(project.projectId)}
-                                className="text-black dark:text-white font-medium hover:text-primary dark:hover:text-primary transition-colors focus:outline-none group flex items-center gap-1"
+                                onClick={() =>
+                                  handleProjectClick(project.projectId)
+                                }
+                                className="group flex items-center gap-1 font-medium text-black transition-colors hover:text-primary focus:outline-none dark:text-white dark:hover:text-primary"
                               >
                                 <span>{project.projectName}</span>
-                                <svg 
-                                  className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" 
-                                  fill="none" 
-                                  stroke="currentColor" 
+                                <svg
+                                  className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
+                                  fill="none"
+                                  stroke="currentColor"
                                   viewBox="0 0 24 24"
                                 >
-                                  <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={2} 
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                                   />
                                 </svg>
                               </button>
                             </td>
                           )}
-                          <td className="py-5 px-4">
+                          <td className="px-4 py-5">
                             <Tooltip
                               content={
                                 <div className="space-y-1">
-                                  <div className="font-medium">{stat.userName}</div>
+                                  <div className="font-medium">
+                                    {stat.userName}
+                                  </div>
                                   <div className="text-xs text-gray-300">
-                                    <div>연락처: {userInfoMap[stat.userId]?.phoneNumber || '-'}</div>
-                                    <div>일일 비용: {userInfoMap[stat.userId]?.cost.toLocaleString()}원</div>
-                                    <div>참여 프로젝트: {userInfoMap[stat.userId]?.projectCount}개</div>
+                                    <div>
+                                      연락처:{" "}
+                                      {userInfoMap[stat.userId]?.phoneNumber ||
+                                        "-"}
+                                    </div>
+                                    <div>
+                                      일일 비용:{" "}
+                                      {userInfoMap[
+                                        stat.userId
+                                      ]?.cost.toLocaleString()}
+                                      원
+                                    </div>
+                                    <div>
+                                      참여 프로젝트:{" "}
+                                      {userInfoMap[stat.userId]?.projectCount}개
+                                    </div>
                                   </div>
                                 </div>
                               }
                             >
-                              <span className="text-sm font-medium text-black dark:text-white cursor-help">
+                              <span className="cursor-help text-sm font-medium text-black dark:text-white">
                                 {stat.userName}
                               </span>
                             </Tooltip>
                           </td>
-                          <td className="py-5 px-4 text-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{stat.total}</span>
+                          <td className="px-4 py-5 text-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {stat.total}
+                            </span>
                           </td>
-                          <td className="py-5 px-4 text-center">
-                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-success/10 text-success text-sm font-medium">
+                          <td className="px-4 py-5 text-center">
+                            <span className="inline-flex items-center justify-center rounded-full bg-success/10 px-2.5 py-1 text-sm font-medium text-success">
                               {stat.normal}
                             </span>
                           </td>
-                          <td className="py-5 px-4 text-center">
-                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-danger/10 text-danger text-sm font-medium">
+                          <td className="px-4 py-5 text-center">
+                            <span className="inline-flex items-center justify-center rounded-full bg-danger/10 px-2.5 py-1 text-sm font-medium text-danger">
                               {stat.abnormal}
                             </span>
                           </td>
-                          <td className="py-5 px-4 text-right">
-                            <span className="text-sm font-medium text-meta-5">{stat.cost.toLocaleString()}원</span>
+                          <td className="px-4 py-5 text-right">
+                            <span className="text-sm font-medium text-meta-5">
+                              {stat.cost.toLocaleString()}원
+                            </span>
                           </td>
                         </tr>
                       ))}
-                      <tr className="bg-gray-50/70 dark:bg-meta-4/50 font-medium border-b border-gray-200 dark:border-strokedark">
-                        <td className="py-4 px-4">소계</td>
-                        <td className="py-4 px-4 text-center">{projectTotal.total}</td>
-                        <td className="py-4 px-4 text-center">{projectTotal.normal}</td>
-                        <td className="py-4 px-4 text-center">{projectTotal.abnormal}</td>
-                        <td className="py-4 px-4 text-right text-meta-5">{projectTotal.cost.toLocaleString()}원</td>
+                      <tr className="border-b border-gray-200 bg-gray-50/70 font-medium dark:border-strokedark dark:bg-meta-4/50">
+                        <td className="px-4 py-4">소계</td>
+                        <td className="px-4 py-4 text-center">
+                          {projectTotal.total}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {projectTotal.normal}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {projectTotal.abnormal}
+                        </td>
+                        <td className="px-4 py-4 text-right text-meta-5">
+                          {projectTotal.cost.toLocaleString()}원
+                        </td>
                       </tr>
                     </React.Fragment>
                   );
                 })}
                 {/* 전체 합계 행 */}
-                <tr className="bg-primary/5 dark:bg-primary/10 font-bold">
-                  <td colSpan={2} className="py-5 px-4 text-black dark:text-white">총계</td>
-                  <td className="py-5 px-4 text-center text-black dark:text-white">
-                    {dashboardData.reduce((acc, project) => 
-                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.total, 0), 0
+                <tr className="bg-primary/5 font-bold dark:bg-primary/10">
+                  <td
+                    colSpan={2}
+                    className="px-4 py-5 text-black dark:text-white"
+                  >
+                    총계
+                  </td>
+                  <td className="px-4 py-5 text-center text-black dark:text-white">
+                    {dashboardData.reduce(
+                      (acc, project) =>
+                        acc +
+                        calculateProjectStats(project).reduce(
+                          (sum, stat) => sum + stat.total,
+                          0,
+                        ),
+                      0,
                     )}
                   </td>
-                  <td className="py-5 px-4 text-center text-success">
-                    {dashboardData.reduce((acc, project) => 
-                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.normal, 0), 0
+                  <td className="px-4 py-5 text-center text-success">
+                    {dashboardData.reduce(
+                      (acc, project) =>
+                        acc +
+                        calculateProjectStats(project).reduce(
+                          (sum, stat) => sum + stat.normal,
+                          0,
+                        ),
+                      0,
                     )}
                   </td>
-                  <td className="py-5 px-4 text-center text-danger">
-                    {dashboardData.reduce((acc, project) => 
-                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.abnormal, 0), 0
+                  <td className="px-4 py-5 text-center text-danger">
+                    {dashboardData.reduce(
+                      (acc, project) =>
+                        acc +
+                        calculateProjectStats(project).reduce(
+                          (sum, stat) => sum + stat.abnormal,
+                          0,
+                        ),
+                      0,
                     )}
                   </td>
-                  <td className="py-5 px-4 text-right text-meta-5 font-bold">
-                    {dashboardData.reduce((acc, project) => 
-                      acc + calculateProjectStats(project).reduce((sum, stat) => sum + stat.cost, 0), 0
-                    ).toLocaleString()}원
+                  <td className="px-4 py-5 text-right font-bold text-meta-5">
+                    {dashboardData
+                      .reduce(
+                        (acc, project) =>
+                          acc +
+                          calculateProjectStats(project).reduce(
+                            (sum, stat) => sum + stat.cost,
+                            0,
+                          ),
+                        0,
+                      )
+                      .toLocaleString()}
+                    원
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        <ChartOne />
-        <ChartTwo />
-        <ChartThree />
-        <MapOne />
-        <div className="col-span-12 xl:col-span-8">
-          <TableOne />
-        </div>
-        <ChatCard />
       </div>
     </>
   );

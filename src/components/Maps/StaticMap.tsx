@@ -7,26 +7,37 @@ interface StaticMapProps {
   lng: number;
   width?: string;
   height?: string;
+  level?: number;
+  className?: string;
 }
 
-const StaticMap = ({ lat, lng, width = '100%', height = '400px' }: StaticMapProps) => {
+const StaticMap = ({ 
+  lat, 
+  lng, 
+  width = '100%', 
+  height = '400px',
+  level = 3,
+  className = ''
+}: StaticMapProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   return (
-    <div className="relative">
-      <Map
-        center={{ lat, lng }}
-        style={{ width, height }}
-        level={3}
-        onTileLoaded={() => setIsLoading(false)}
-      >
-        <MapMarker position={{ lat, lng }} />
-      </Map>
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-meta-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      )}
+    <div className={className}>
+      <div className="relative">
+        <Map
+          center={{ lat, lng }}
+          style={{ width, height }}
+          level={level}
+          onTileLoaded={() => setIsLoading(false)}
+        >
+          <MapMarker position={{ lat, lng }} />
+        </Map>
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-meta-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
