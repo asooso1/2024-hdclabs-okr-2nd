@@ -16,9 +16,9 @@ const StaticMap = dynamic(() => import("@/components/Maps/StaticMap"), {
   ssr: false,
 });
 
-const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
-  ssr: false,
-});
+// const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
+//   ssr: false,
+// });
 
 interface UserInfo {
   id: string;
@@ -128,7 +128,7 @@ const Dashboard: React.FC = () => {
           start: new Date(startDate),
           end: new Date(endDate)
         }).map(date => format(date, 'yyyy-MM-dd')));
-        setWorkChart(workChartResponse);
+        setWorkChart(transformChartData(workChartResponse));
       } catch (error) {
         console.error("작업 데이터 조회 실패:", error);
       }
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  // 프��젝트 클릭 핸들러 추가
+  // 프로젝트 클릭 핸들러 추가
   const handleProjectClick = (projectId: string) => {
     router.push(`/admin/projects/${projectId}`);
   };
@@ -240,7 +240,7 @@ const Dashboard: React.FC = () => {
       { wch: 20 }, // 프로젝트명
       { wch: 15 }, // 작업자
       { wch: 15 }, // 연락처
-      { wch: 10 }, // 작업계획
+      { wch: 10 }, // 작업계��
       { wch: 10 }, // 정상
       { wch: 10 }, // 이상
       { wch: 15 }, // 비용
@@ -365,20 +365,8 @@ const Dashboard: React.FC = () => {
         </CardDataStats>
       </div>
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        <ChartOne data={workChart ? transformChartData(workChart) : null} />
-        <ChartTwo data={workChart ? transformChartData(workChart) : null} />
-        {/* <ChartThree />
-        <StaticMap 
-          lat={37.5665} // 서울시청 좌표
-          lng={126.9780}
-          height="400px"
-          level={10} // 더 넓은 지역을 보기 위해 level 값을 높게 설정
-          className="col-span-12 rounded-lg border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-7"
-        /> */}
-        {/* <div className="col-span-12 xl:col-span-8">
-          <TableOne />
-        </div>
-        <ChatCard /> */}
+        <ChartOne data={workChart} />
+        <ChartTwo data={workChart} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4">

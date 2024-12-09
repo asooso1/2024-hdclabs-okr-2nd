@@ -153,22 +153,40 @@ const AddProject = () => {
     }
     try {
       const projectData = {
-        managerId: localStorage.getItem('userId'),
+        managerId: localStorage.getItem("userId"),
         name: projectName,
         description: description,
         workType: workType,
-        address: location.address + ' ' + location.detailAddress,
+        address: location.address + " " + location.detailAddress,
         latitude: location.latitude,
         longitude: location.longitude,
-        from: startDate ? startDate.toISOString().split('T')[0] : '',
-        to: endDate ? endDate.toISOString().split('T')[0] : '',
-        preferences: recommendedDates.map(date => date.toISOString().split('T')[0]) as unknown as [],
-        userIds: selectedUsers.map((user: any) => user.value)
+        // from: startDate ? startDate.toISOString().split('T')[0] : '',
+        from: startDate
+          ? new Date(
+              startDate.getTime() - startDate.getTimezoneOffset() * 60000,
+            )
+              .toISOString()
+              .split("T")[0]
+          : "",
+        to: endDate
+          ? new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000)
+              .toISOString()
+              .split("T")[0]
+          : "",
+
+        // to: endDate ? endDate.toISOString().split('T')[0] : '',
+        preferences: recommendedDates.map(
+          (date) =>
+            new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+              .toISOString()
+              .split("T")[0],
+        ) as unknown as [],
+        userIds: selectedUsers.map((user: any) => user.value),
       };
 
       const response = await projectApi.createProject(projectData as Partial<Project>);
       if (response.id) {
-        router.push(`/admin/projects/${response.id}`);
+        // router.push(`/admin/projects/${response.id}`);
       }
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);
