@@ -157,6 +157,14 @@ const AddProject = () => {
     setIsSubmitting(true);
     
     try {
+      // 한국 시간대로 날짜 변환
+      const koreanStartDate = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000))
+        .toISOString()
+        .split('T')[0];
+      const koreanEndDate = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000))
+        .toISOString()
+        .split('T')[0];
+
       const projectData = {
         managerId: localStorage.getItem('userId'),
         name: projectName,
@@ -165,19 +173,25 @@ const AddProject = () => {
         address: location.address + ' ' + location.detailAddress,
         latitude: location.latitude,
         longitude: location.longitude,
-        from: startDate ? startDate : '',
-        to: endDate ? endDate : '',
-        preferences: recommendedDates.map(date => date.toISOString().split('T')[0]) as unknown as [],
+        from: koreanStartDate || undefined,
+        to: koreanEndDate || undefined,
+        preferences: recommendedDates.map(date => 
+          new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+            .toISOString()
+            .split('T')[0]
+        ) as [],
         userIds: selectedUsers.map((user: any) => user.value)
       };
 
-      const response = await projectApi.createProject(projectData as Partial<Project>);
+      const response = await projectApi.createProject(projectData as unknown as Partial<Project>);
+      
       if (response.id) {
-        router.push(`/admin/projects/${response.id}`);
+        // router.push(`/admin/projects/${response.id}`);
       }
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);
     } finally {
+      setIsSubmitting(false);
     }
   };
 
