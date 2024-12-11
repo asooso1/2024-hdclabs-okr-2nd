@@ -232,7 +232,8 @@ export default function CalendarPage() {
                     <StaticMap
                       lat={project.latitude}
                       lng={project.longitude}
-                      height="100%"
+                      width="100%"
+                      height="300px"
                     />
                   </div>
                 </div>
