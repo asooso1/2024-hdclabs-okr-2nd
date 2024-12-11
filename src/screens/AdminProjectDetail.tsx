@@ -76,6 +76,7 @@ const ProjectDetailPage = () => {
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
   const [filteredStatuses, setFilteredStatuses] = useState<ProjectStatus[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageDescriptions, setSelectedImageDescriptions] = useState<string>('');
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
@@ -127,7 +128,7 @@ const ProjectDetailPage = () => {
 
     setUserSummaries(Array.from(userMap.values()));
 
-    // 선택된 사용자의 상세 현황 필터���
+    // 선택된 사용자의 상세 현황 필터
     if (selectedUser) {
       setFilteredStatuses(
         filteredData.filter(status => status.userId === selectedUser)
@@ -415,6 +416,7 @@ const ProjectDetailPage = () => {
                                   className="flex items-center cursor-pointer hover:text-primary"
                                   onClick={() => {
                                     setSelectedImages(status.before!.imageUrls);
+                                    setSelectedImageDescriptions(status.before!.description);
                                     setIsImageModalOpen(true);
                                   }}
                                 >
@@ -447,6 +449,7 @@ const ProjectDetailPage = () => {
                                   className="flex items-center cursor-pointer hover:text-primary"
                                   onClick={() => {
                                     setSelectedImages(status.after!.imageUrls);
+                                    setSelectedImageDescriptions(status.after!.description);
                                     setIsImageModalOpen(true);
                                   }}
                                 >
@@ -478,6 +481,7 @@ const ProjectDetailPage = () => {
                                 className="flex items-center cursor-pointer hover:text-primary"
                                 onClick={() => {
                                   setSelectedImages(status.confirmation!.imageUrls);
+                                  setSelectedImageDescriptions(status.confirmation!.description);
                                   setIsImageModalOpen(true);
                                 }}
                               >
@@ -512,16 +516,23 @@ const ProjectDetailPage = () => {
           onClose={() => setIsImageModalOpen(false)}
           title="이미지 보기"
         >
-          <div className="grid grid-cols-1 gap-4 p-4">
-            {selectedImages.map((url, index) => (
-              <div key={index} className="relative w-full h-96">
-                <Image
-                  src={`https://hdcl-csp-stg.s3.ap-northeast-2.amazonaws.com/${url}`}
-                  alt={`작업 이미지 ${index + 1}`}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
+          <div className="flex flex-col space-y-6 p-4">
+            {selectedImages.map((url: string, index: number) => (
+              <div key={index} className="flex flex-col">
+                <div className="relative w-full h-96">
+                  <Image
+                    src={`https://hdcl-csp-stg.s3.ap-northeast-2.amazonaws.com/${url}`}
+                    alt={`작업 이미지 ${index + 1}`}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
+                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                    특이사항 ; {selectedImageDescriptions}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
