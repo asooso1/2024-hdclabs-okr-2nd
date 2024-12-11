@@ -186,7 +186,7 @@ const AddProject = () => {
       const response = await projectApi.createProject(projectData as unknown as Partial<Project>);
       
       if (response.id) {
-        // router.push(`/admin/projects/${response.id}`);
+        router.push(`/admin/projects/${response.id}`);
       }
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);

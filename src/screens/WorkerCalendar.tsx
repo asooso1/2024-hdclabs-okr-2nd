@@ -252,16 +252,16 @@ export default function CalendarPage() {
                 {searchParams.get('type') === 'accept' && (
                   <div className="flex items-center">
                     <div className="w-4 h-3 rounded-full bg-[#34D399] mr-2"></div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">추천 작업일</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">추천 작업일</span>
                   </div>
                 )}
                 <div className="flex items-center">
                   <div className="w-4 h-3 rounded-full bg-primary/20 mr-2"></div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">작업 기간</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">작업 기간</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-4 h-3 rounded-full bg-[#F59E0B] mr-2"></div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">나의 근무일</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">나의 근무일</span>
                 </div>
               </div>
             </div>
