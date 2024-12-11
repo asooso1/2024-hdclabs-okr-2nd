@@ -69,8 +69,8 @@ const ProjectDetailPage = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
-    from: new Date().toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0]
+    from: format(new Date(), 'yyyy-MM-dd'),
+    to: format(new Date(), 'yyyy-MM-dd')
   });
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
