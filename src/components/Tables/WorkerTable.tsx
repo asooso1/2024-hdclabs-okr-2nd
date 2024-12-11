@@ -45,7 +45,7 @@ const WorkerTable = ({ projects, loading }: WorkerTableProps) => {
           <p className="font-medium">프로젝트명</p>
         </div>
         <div className="flex items-center col-span-1">
-          <p className="font-medium">작업종류</p>
+          <p className="font-medium">공종</p>
         </div>
         <div className="flex items-center col-span-1">
           <p className="font-medium">비고</p>
@@ -100,9 +100,9 @@ const WorkerTable = ({ projects, loading }: WorkerTableProps) => {
           <p className="font-medium">프로젝트명</p>
         </div>
         <div className="flex items-center col-span-1">
-          <p className="font-medium">작업종류</p>
+          <p className="font-medium">공종</p>
         </div>
-        <div className="flex items-center col-span-2">
+        <div className="flex items-center col-span-2 hidden md:block">
           <p className="font-medium">작업 기간</p>
         </div>
         <div className="flex items-center col-span-2">
@@ -129,7 +129,7 @@ const WorkerTable = ({ projects, loading }: WorkerTableProps) => {
               <div className="flex items-center col-span-1">
                 <span className="inline-block bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full">{project.workType || '-'}</span>
               </div>
-              <div className="flex items-center col-span-2">
+              <div className="flex items-center col-span-2 hidden md:block">
                 <p className="text-sm text-black dark:text-white">{new Date(project.from).toLocaleDateString()} <br className="block md:hidden" />~ {new Date(project.to).toLocaleDateString()}</p>
               </div>
               <div className="flex items-center col-span-2">
