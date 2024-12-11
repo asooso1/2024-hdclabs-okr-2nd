@@ -120,6 +120,8 @@ const AddProject = () => {
     cost: 0
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     const preloadUsers = async () => {
       await searchUsers('');
@@ -151,37 +153,22 @@ const AddProject = () => {
       alert('모든 필드를 입력해주세요.');
       return;
     }
+
+    setIsSubmitting(true);
+    
     try {
       const projectData = {
-        managerId: localStorage.getItem("userId"),
+        managerId: localStorage.getItem('userId'),
         name: projectName,
         description: description,
         workType: workType,
-        address: location.address + " " + location.detailAddress,
+        address: location.address + ' ' + location.detailAddress,
         latitude: location.latitude,
         longitude: location.longitude,
-        // from: startDate ? startDate.toISOString().split('T')[0] : '',
-        from: startDate
-          ? new Date(
-              startDate.getTime() - startDate.getTimezoneOffset() * 60000,
-            )
-              .toISOString()
-              .split("T")[0]
-          : "",
-        to: endDate
-          ? new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000)
-              .toISOString()
-              .split("T")[0]
-          : "",
-
-        // to: endDate ? endDate.toISOString().split('T')[0] : '',
-        preferences: recommendedDates.map(
-          (date) =>
-            new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-              .toISOString()
-              .split("T")[0],
-        ) as unknown as [],
-        userIds: selectedUsers.map((user: any) => user.value),
+        from: startDate ? startDate : '',
+        to: endDate ? endDate : '',
+        preferences: recommendedDates.map(date => date.toISOString().split('T')[0]) as unknown as [],
+        userIds: selectedUsers.map((user: any) => user.value)
       };
 
       const response = await projectApi.createProject(projectData as Partial<Project>);
@@ -190,7 +177,8 @@ const AddProject = () => {
       }
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);
-      // 에러 처리
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -496,9 +484,36 @@ const AddProject = () => {
 
             <button
               type="submit"
-              className="rounded-xl bg-primary px-4 py-2 text-white"
+              disabled={isSubmitting}
+              className="flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-white disabled:bg-opacity-70"
             >
-              등록
+              {isSubmitting ? (
+                <>
+                  <svg 
+                    className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                    />
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  등록중...
+                </>
+              ) : (
+                '등록'
+              )}
             </button>
           </div>
         </form>
