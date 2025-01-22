@@ -55,8 +55,8 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [dateRange, setDateRange] = useState({
-    startDate: '2024-01-01',
-    endDate: '2024-12-31'
+    startDate: '2024-12-01',
+    endDate: '2025-01-31'
   });
   const [userInfoMap, setUserInfoMap] = useState<Record<string, UserInfo>>({});
   const [workCount, setWorkCount] = useState<WorkCount | null>(null);

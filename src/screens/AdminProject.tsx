@@ -249,7 +249,7 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
 
       <div className="mt-4">
         <div className="overflow-hidden border-t border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-12 bg-gray-50 dark:bg-gray-800 p-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+          <div className="grid grid-cols-12 bg-gray-50 dark:bg-gray-800 p-6 text-sm font-medium text-gray-500 dark:text-gray-400">
             <div className="col-span-6 md:col-span-3">프로젝트명</div>
             <div className="col-span-3 md:col-span-2">작업종류</div>
             <div className="col-span-3 md:col-span-2">작업 기간</div>
@@ -261,7 +261,7 @@ const AdminProject = ({ projects, loading }: TableTwoProps) => {
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredProjects.map((project) => (
               <Link key={project.id} href={`/admin/projects/${project.id}`}>
-                <div className="grid grid-cols-12 items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <div className="grid grid-cols-12 items-center p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <div className="col-span-6 md:col-span-3 font-medium text-gray-900 dark:text-white">
                     {project.name || '-'}
                   </div>
