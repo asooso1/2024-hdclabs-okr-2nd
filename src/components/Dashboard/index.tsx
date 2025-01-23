@@ -48,6 +48,44 @@ function transformChartData(workChart: Record<string, { total: number; done: num
   };
 }
 
+// workChart 데이터를 변환하는 함수 수정
+function transformMonthChartData(monthWorkChartResponse: any[]) {
+  const [decemberData, januaryData] = monthWorkChartResponse;
+  
+  // 12월과 1월 데이터를 각각 변환
+  const transformMonth = (data: Record<string, { total: number; done: number }>) => {
+    const sortedDates = Object.keys(data).sort();
+    return sortedDates.map(date => ({
+      date: format(new Date(date), 'MM/dd'),
+      total: data[date].total,
+      done: data[date].done
+    }));
+  };
+
+  const decemberStats = transformMonth(decemberData);
+  const januaryStats = transformMonth(januaryData);
+
+  return {
+    categories: ['2024-12', '2025-01'],
+    series: [
+      {
+        name: '전체 작업',
+        data: [
+          decemberStats.reduce((sum, day) => sum + day.total, 0),
+          januaryStats.reduce((sum, day) => sum + day.total, 0)
+        ]
+      },
+      {
+        name: '완료된 작업',
+        data: [
+          decemberStats.reduce((sum, day) => sum + day.done, 0),
+          januaryStats.reduce((sum, day) => sum + day.done, 0)
+        ]
+      }
+    ]
+  };
+}
+
 const Dashboard: React.FC = () => {
   const router = useRouter();
   const [dashboardData, setDashboardData] = useState<AttendanceDashboard[]>([]);
@@ -61,6 +99,7 @@ const Dashboard: React.FC = () => {
   const [userInfoMap, setUserInfoMap] = useState<Record<string, UserInfo>>({});
   const [workCount, setWorkCount] = useState<WorkCount | null>(null);
   const [workChart, setWorkChart] = useState<any| null>(null);
+  const [monthWorkChart, setMonthWorkChart] = useState<any| null>(null);
   // targetStartDate: {total?: number; done?: number; "total-done"?: number};
   // targetEndDate: {total?: number; done?: number; "total-done"?: number};
 
@@ -128,6 +167,19 @@ const Dashboard: React.FC = () => {
           start: new Date(startDate),
           end: new Date(endDate)
         }).map(date => format(date, 'yyyy-MM-dd')));
+        console.log(workChartResponse)
+        const monthWorkChartResponse = await Promise.all([
+          adminApi.getWorkChart(eachDayOfInterval({
+            start: new Date('2024-12-01'),
+            end: new Date('2024-12-31')
+          }).map(date => format(date, 'yyyy-MM-dd'))),
+          adminApi.getWorkChart(eachDayOfInterval({
+            start: new Date('2025-01-01'),
+            end: new Date('2025-01-31')
+          }).map(date => format(date, 'yyyy-MM-dd')))
+        ]);
+        console.log(monthWorkChartResponse)
+        setMonthWorkChart(transformMonthChartData(monthWorkChartResponse));
         setWorkChart(transformChartData(workChartResponse));
       } catch (error) {
         console.error("작업 데이터 조회 실패:", error);
@@ -370,7 +422,7 @@ const Dashboard: React.FC = () => {
           <ChartOne data={workChart} />
         </div>
         <div className="col-span-1 md:col-span-6">
-          <ChartTwo data={workChart} />
+          <ChartTwo data={monthWorkChart} />
         </div>
       </div>
 

@@ -80,7 +80,7 @@ const ChartTwo: React.FC<ChartTwoProps> = ({ data }) => {
       <div className="mb-4 justify-between gap-4 sm:flex">
         <div>
           <h4 className="text-xl font-bold text-black dark:text-white">
-            작업 현황
+            월별 작업 현황
           </h4>
         </div>
       </div>
